@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@theme {
+    --font-sans:
+        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    /* Kolor marki (czerwień z logo) */
+    --color-brand-50: oklch(97.1% 0.013 17.38);
+    --color-brand-100: oklch(93.6% 0.032 17.717);
+    --color-brand-500: oklch(63.7% 0.237 25.331);
+    --color-brand-600: oklch(57.7% 0.245 27.325);
+    --color-brand-700: oklch(50.5% 0.213 27.518);
+    --color-brand-900: oklch(39.6% 0.141 25.723);
+    --color-brand-950: oklch(25.8% 0.092 26.042);
+}
+
+/* Boczny margines treści - wspólny dla nagłówka, sekcji i stopki */
+@utility gutter {
+    @apply px-4 sm:px-6 lg:px-12 xl:px-24;
+}
+
+/* Ukrycie paska przewijania (np. w karuzeli) */
+@utility scrollbar-none {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+        @apply scroll-pt-20;
+    }
+
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+}

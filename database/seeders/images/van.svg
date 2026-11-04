@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420">
+    <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="{{sky}}"/>
+            <stop offset="1" stop-color="{{horizon}}"/>
+        </linearGradient>
+    </defs>
+    <rect width="640" height="420" fill="url(#sky)"/>
+    <rect y="320" width="640" height="100" fill="{{ground}}"/>
+    <rect x="20" y="384" width="90" height="5" fill="#ffffff" opacity="0.4"/>
+    <rect x="170" y="384" width="90" height="5" fill="#ffffff" opacity="0.4"/>
+    <rect x="320" y="384" width="90" height="5" fill="#ffffff" opacity="0.4"/>
+    <rect x="470" y="384" width="90" height="5" fill="#ffffff" opacity="0.4"/>
+    <path d="M84 150q0-22 22-22h370q14 0 24 10l72 88 34 16q14 8 14 24v80q0 12-12 12H96q-12 0-12-12z" fill="{{body}}" stroke="#111827" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M462 150h24q7 0 12 6l62 78H462z" fill="#1f2937" fill-opacity="0.8"/>
+    <rect x="450" y="150" width="4" height="196" fill="#111827" fill-opacity="0.2"/>
+    <rect x="300" y="150" width="4" height="196" fill="#111827" fill-opacity="0.2"/>
+    <rect x="580" y="282" width="20" height="12" rx="4" fill="#fde68a"/>
+    <rect x="86" y="282" width="14" height="24" rx="4" fill="#ef4444"/>
+    <circle cx="190" cy="338" r="33" fill="#111827"/>
+    <circle cx="190" cy="338" r="16" fill="#9ca3af"/>
+    <circle cx="490" cy="338" r="33" fill="#111827"/>
+    <circle cx="490" cy="338" r="16" fill="#9ca3af"/>
+</svg>
