@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { findClient } from '@/components/admin/data/clients';
-import { allReservations } from '@/components/admin/data/reservations';
+import type { Client } from '@/components/admin/data/clients';
 import ReservationsTable from '@/components/admin/reservations/reservations-table';
+import type { AdminReservation } from '@/components/admin/reservations/types';
 import { buttonClass } from '@/components/ui/button';
 import PageHeader from '@/components/ui/page-header';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -25,25 +25,10 @@ function InfoCard({ title, rows }: { title: string; rows: [string, ReactNode][] 
     );
 }
 
-export default function AdminClientShow({ id }: { id: number }) {
-    const client = findClient(id);
-
-    if (!client) {
-        return (
-            <>
-                <Head title="Nie znaleziono klienta" />
-                <PageHeader title="Nie znaleziono klienta" description={`Brak klienta o ID ${id}.`} />
-                <Link href={admin.clients.index()} className={buttonClass('dark')}>
-                    Wróć do listy
-                </Link>
-            </>
-        );
-    }
-
-    const reservations = allReservations().filter((reservation) => reservation.user_id === client.id);
+export default function AdminClientShow({ client, reservations, failed }: { client: Client; reservations: AdminReservation[]; failed: boolean }) {
     const spent = reservations
         .filter((reservation) => reservation.state === 'completed' || reservation.state === 'confirmed')
-        .reduce((sum, reservation) => sum + reservation.total_price, 0);
+        .reduce((sum, reservation) => sum + Number(reservation.total_price), 0);
     const profile = client.profile;
 
     return (
@@ -52,7 +37,7 @@ export default function AdminClientShow({ id }: { id: number }) {
 
             <PageHeader
                 title={client.name}
-                description={`Klient od ${formatDate(client.created_at)}`}
+                description={client.created_at ? `Klient od ${formatDate(client.created_at)}` : undefined}
                 action={
                     <Link href={admin.clients.index()} className={buttonClass('outline', 'md', 'border-gray-300')}>
                         ← Wszyscy klienci
@@ -93,7 +78,13 @@ export default function AdminClientShow({ id }: { id: number }) {
 
             <section className="mt-8">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">Rezerwacje klienta</h2>
-                <ReservationsTable reservations={reservations} hideClient />
+                {failed ? (
+                    <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        Nie udało się wczytać rezerwacji klienta.
+                    </p>
+                ) : (
+                    <ReservationsTable reservations={reservations} hideClient />
+                )}
             </section>
         </>
     );

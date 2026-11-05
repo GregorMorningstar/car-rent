@@ -39,17 +39,22 @@ function distanceInKm(from: UserPosition, location: MapLocation) {
 const formatDistance = (kilometers: number) =>
     `${kilometers.toLocaleString('pl-PL', { maximumFractionDigits: kilometers < 10 ? 1 : 0 })} km`;
 
-/** Okno wyboru miejsca: mapa, lista oraz szukanie w pobliżu po zgodzie klienta. */
+/**
+ * Okno wyboru miejsca: mapa, lista oraz szukanie w pobliżu po zgodzie klienta.
+ * Z selectNearest zgoda od razu wpisuje najbliższe miejsce, a klient może wybrać inne.
+ */
 export default function LocationPicker({
     type,
     locations,
     selected,
+    selectNearest = false,
     onSelect,
     onClose,
 }: {
     type: 'pickup' | 'dropoff' | null;
     locations: MapLocation[];
     selected: string;
+    selectNearest?: boolean;
     onSelect: (id: string) => void;
     onClose: () => void;
 }) {
@@ -59,6 +64,7 @@ export default function LocationPicker({
     const [visible, setVisible] = useState(false);
     const [geolocation, setGeolocation] = useState<Geolocation>('idle');
     const [position, setPosition] = useState<UserPosition>();
+    const [nearestName, setNearestName] = useState<string>();
 
     // Otwiera okno tylko przy zmianie rodzaju miejsca - sam wybór nie może otworzyć go ponownie.
     const opened = useRef(selected);
@@ -67,8 +73,14 @@ export default function LocationPicker({
     useEffect(() => {
         if (type && !dialog.current?.open) {
             setActiveId(opened.current ? Number(opened.current) : undefined);
+            setNearestName(undefined);
             dialog.current?.showModal();
             setVisible(true);
+
+            // Zgoda już jest, więc kolejne puste pole też dostaje najbliższe miejsce. Wybór klienta zostaje.
+            if (selectNearest && position && !opened.current) {
+                pickNearest(position);
+            }
         }
     }, [type]);
 
@@ -99,12 +111,30 @@ export default function LocationPicker({
         close();
     };
 
+    const pickNearest = (from: UserPosition) => {
+        const [nearest] = locations
+            .filter(hasCoordinates)
+            .sort((first, second) => distanceInKm(from, first) - distanceInKm(from, second));
+
+        if (nearest) {
+            onSelect(String(nearest.id));
+            setActiveId(nearest.id);
+            setNearestName(nearest.name);
+        }
+    };
+
     const locate = () => {
         setGeolocation('locating');
         navigator.geolocation.getCurrentPosition(
             ({ coords }) => {
-                setPosition({ lat: coords.latitude, lng: coords.longitude });
+                const current = { lat: coords.latitude, lng: coords.longitude };
+
+                setPosition(current);
                 setGeolocation('ready');
+
+                if (selectNearest) {
+                    pickNearest(current);
+                }
             },
             () => {
                 setPosition(undefined);
@@ -184,8 +214,9 @@ export default function LocationPicker({
                             {geolocation === 'asking' && (
                                 <div role="alertdialog" aria-label="Zgoda na lokalizację" className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
                                     <p>
-                                        Czy zgadzasz się na udostępnienie swojej lokalizacji? Użyjemy jej tylko w tym oknie, żeby
-                                        pokazać najbliższe miejsca. Nie zapisujemy jej i nie wysyłamy na nasz serwer.
+                                        Czy zgadzasz się na udostępnienie swojej lokalizacji? Użyjemy jej tylko w tym oknie, żeby{' '}
+                                        {selectNearest ? 'wybrać najbliższe miejsce' : 'pokazać najbliższe miejsca'}. Nie zapisujemy jej i nie wysyłamy
+                                        na nasz serwer.
                                     </p>
                                     <div className="mt-3 flex gap-2">
                                         <button type="button" onClick={locate} className={buttonClass('dark', 'sm', 'flex-1')}>
@@ -203,7 +234,13 @@ export default function LocationPicker({
                             )}
 
                             {geolocation === 'locating' && <p className="text-sm text-gray-500">Sprawdzam lokalizację…</p>}
-                            {geolocation === 'ready' && <p className="text-sm text-gray-500">Najbliższe miejsca są na górze listy.</p>}
+                            {geolocation === 'ready' && (
+                                <p role="status" className="text-sm text-gray-500">
+                                    {nearestName
+                                        ? `Wybrano najbliższe miejsce: ${nearestName}. Możesz wybrać inne z listy.`
+                                        : 'Najbliższe miejsca są na górze listy.'}
+                                </p>
+                            )}
                             {geolocation === 'denied' && (
                                 <p className="text-sm text-gray-500">
                                     Bez zgody na lokalizację szukanie w pobliżu jest niedostępne. Wybierz miejsce z listy.

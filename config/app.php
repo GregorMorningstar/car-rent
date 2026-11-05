@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | Adresy proxy lub load balancera, oddzielone przecinkami. Pusto oznacza
+    | bezpośrednie połączenie z aplikacją.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
@@ -66,6 +78,19 @@ return [
     */
 
     'timezone' => 'UTC',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Local Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Daty z czasem są zapisywane w UTC, a na ekranie zamienia je przeglądarka.
+    | Ta strefa służy tylko do ustalenia, który dzień kalendarzowy jest teraz
+    | w wypożyczalni, np. czy wynajem zaczyna się dzisiaj.
+    |
+    */
+
+    'local_timezone' => env('APP_LOCAL_TIMEZONE', 'Europe/Warsaw'),
 
     /*
     |--------------------------------------------------------------------------

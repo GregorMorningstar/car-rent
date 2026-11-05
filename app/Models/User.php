@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,12 +23,16 @@ use Illuminate\Notifications\Notifiable;
  * @property string $password
  * @property string|null $remember_token
  * @property CarbonImmutable|null $last_login_at
+ * @property string|null $two_factor_secret
+ * @property array<int, string>|null $two_factor_recovery_codes
+ * @property CarbonImmutable|null $two_factor_confirmed_at
+ * @property int|null $two_factor_last_step
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read UserProfile|null $profile
  */
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_step'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -45,7 +50,24 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_last_step' => 'integer',
         ];
+    }
+
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
+    }
+
+    /**
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
     }
 
     /**

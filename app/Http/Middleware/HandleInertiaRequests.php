@@ -2,6 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserRole;
+use App\Models\User;
+use App\Services\ChatService;
+use App\Services\ReservationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,6 +45,25 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => fn () => $request->session()->get('status'),
+            'notifications' => fn () => $this->notifications($request->user()),
+        ];
+    }
+
+    /**
+     * Liczniki panelu: nieprzeczytane wiadomości, a dla administratora też nowe zamówienia.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function notifications(?User $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return [
+            'messages' => app(ChatService::class)->unreadCount($user),
+            'reservations' => $user->role === UserRole::Administrator ? app(ReservationService::class)->unseen() : null,
         ];
     }
 }

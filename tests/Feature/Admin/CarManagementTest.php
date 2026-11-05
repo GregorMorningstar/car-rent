@@ -30,6 +30,7 @@ function managedCarData(array $overrides = []): array
         'doors' => 5,
         'seats' => 5,
         'mileage_km' => 15000,
+        'required_license' => 'b',
         'daily_rate' => '189.99',
         'deposit_amount' => '1000.00',
         'prices' => [['min_days' => 1, 'max_days' => null, 'daily_rate' => '189.99']],

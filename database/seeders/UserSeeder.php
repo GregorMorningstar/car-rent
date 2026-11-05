@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 /**
  * Konta startowe: administrator i użytkownik, z danymi adresowymi (user_profiles).
@@ -15,6 +16,11 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Hasło jest znane z repozytorium, a tu nadaje też rolę administratora.
+        if (app()->isProduction()) {
+            throw new RuntimeException('Konta startowe ze znanym hasłem nie mogą powstać na produkcji.');
+        }
+
         $accounts = [
             [
                 'name' => 'Administrator',

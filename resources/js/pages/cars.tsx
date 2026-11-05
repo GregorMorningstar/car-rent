@@ -1,16 +1,18 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { toOptions, transmissionLabels } from '@/components/admin/data/labels';
+import { licenseLabels, toOptions, transmissionLabels } from '@/components/admin/data/labels';
 import CarCard from '@/components/cars/car-card';
-import type { PublicCar, PublicEquipment, PublicLocation } from '@/components/cars/car-card';
+import type { PublicCar, PublicEquipment } from '@/components/cars/car-card';
 import { doorOptions, fuelTypes, vehicleTypes } from '@/components/home/data';
+import LocationPicker from '@/components/home/location-picker';
+import type { MapLocation } from '@/components/home/location-picker';
 import { buttonClass } from '@/components/ui/button';
 import EquipmentIcon from '@/components/ui/equipment-icon';
 import { FormField, Select } from '@/components/ui/form-field';
 import { inputClass } from '@/components/ui/input';
 import SiteLayout from '@/layouts/site-layout';
-import { daysBetween } from '@/lib/format';
+import { daysBetween, localToday } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { cars as carsRoute } from '@/routes';
 
@@ -20,6 +22,7 @@ const emptyFilters = {
     to: '',
     days: '',
     vehicle_type: '',
+    license: '',
     fuel: '',
     transmission: '',
     doors: '',
@@ -29,13 +32,6 @@ const emptyFilters = {
 
 type Filters = typeof emptyFilters;
 type InitialFilters = Partial<Filters> & { equipment?: (string | number)[] };
-
-function today() {
-    const date = new Date();
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-
-    return date.toISOString().slice(0, 10);
-}
 
 /** Adres z aktywnymi filtrami. Termin liczy się dopiero, gdy podane są obie daty. */
 const toQuery = (filters: Filters, equipment: number[]) => {
@@ -55,19 +51,24 @@ export default function Cars({
 }: {
     cars: PublicCar[];
     equipment: PublicEquipment[];
-    pickupLocations: PublicLocation[];
+    pickupLocations: MapLocation[];
     filters: InitialFilters;
 }) {
     const errors = Object.values(usePage().props.errors);
     const [filters, setFilters] = useState<Filters>({ ...emptyFilters, ...initialFilters });
     const [selected, setSelected] = useState<number[]>((initialFilters.equipment ?? []).map(Number));
     const [filtersOpen, setFiltersOpen] = useState(false);
+    const [mapOpen, setMapOpen] = useState(false);
+    // Filtry przeładowują propsy - stała lista nie tworzy otwartej mapy od nowa.
+    const [mapLocations] = useState(pickupLocations);
 
     // Ceny na kartach odpowiadają filtrom już zastosowanym na serwerze.
     const rentalDays =
         initialFilters.from && initialFilters.to
             ? daysBetween(initialFilters.from, initialFilters.to)
             : Number(initialFilters.days) || undefined;
+    // Termin i miejsce z filtrów wypełniają formularz rezerwacji.
+    const bookingQuery = { from: initialFilters.from, to: initialFilters.to, pickup: initialFilters.pickup };
     const hasDates = filters.from !== '' && filters.to !== '';
 
     const query = JSON.stringify(toQuery(filters, selected));
@@ -132,12 +133,19 @@ export default function Cars({
                                 placeholder="Dowolne"
                                 options={pickupLocations.map((location) => ({ value: location.id, label: location.name }))}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setMapOpen(true)}
+                                className="mt-1 h-10 text-sm font-medium text-brand-600 hover:text-brand-700"
+                            >
+                                Wybierz na mapie
+                            </button>
                         </FormField>
                         <FormField label="Data odbioru" id="filter-from">
                             <input
                                 id="filter-from"
                                 type="date"
-                                min={today()}
+                                min={localToday()}
                                 value={filters.from}
                                 onChange={(event) => set('from')(event.target.value)}
                                 className={inputClass}
@@ -147,7 +155,7 @@ export default function Cars({
                             <input
                                 id="filter-to"
                                 type="date"
-                                min={filters.from || today()}
+                                min={filters.from || localToday()}
                                 value={filters.to}
                                 onChange={(event) => set('to')(event.target.value)}
                                 className={inputClass}
@@ -178,6 +186,15 @@ export default function Cars({
                                 onChange={(event) => set('vehicle_type')(event.target.value)}
                                 placeholder="Dowolny"
                                 options={vehicleTypes}
+                            />
+                        </FormField>
+                        <FormField label="Wymagane prawo jazdy" id="filter-license">
+                            <Select
+                                id="filter-license"
+                                value={filters.license}
+                                onChange={(event) => set('license')(event.target.value)}
+                                placeholder="Dowolne"
+                                options={toOptions(licenseLabels)}
                             />
                         </FormField>
                         <FormField label="Rodzaj paliwa" id="filter-fuel">
@@ -278,12 +295,21 @@ export default function Cars({
                     ) : (
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {cars.map((car) => (
-                                <CarCard key={car.id} car={car} days={rentalDays} />
+                                <CarCard key={car.id} car={car} days={rentalDays} bookable bookingQuery={bookingQuery} />
                             ))}
                         </div>
                     )}
                 </section>
             </div>
+
+            <LocationPicker
+                type={mapOpen ? 'pickup' : null}
+                locations={mapLocations}
+                selected={filters.pickup}
+                selectNearest
+                onSelect={set('pickup')}
+                onClose={() => setMapOpen(false)}
+            />
         </>
     );
 }

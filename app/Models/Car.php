@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Enums\CarStatus;
+use App\Enums\DrivingLicense;
 use App\Enums\FuelType;
 use App\Enums\ReservationStatus;
 use App\Enums\Transmission;
 use App\Enums\VehicleType;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -22,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $brand
  * @property string $model
  * @property VehicleType $vehicle_type
+ * @property DrivingLicense $required_license
  * @property string $registration_number
  * @property string $vin
  * @property int $production_year
@@ -50,6 +53,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'brand',
     'model',
     'vehicle_type',
+    'required_license',
     'registration_number',
     'vin',
     'production_year',
@@ -78,6 +82,7 @@ class Car extends Model
     {
         return [
             'vehicle_type' => VehicleType::class,
+            'required_license' => DrivingLicense::class,
             'production_year' => 'integer',
             'fuel_type' => FuelType::class,
             'transmission' => Transmission::class,
@@ -113,14 +118,18 @@ class Car extends Model
 
     /**
      * Auto jest zajęte przez potwierdzoną rezerwację albo oczekującą, której termin potwierdzenia nie minął.
+     * Odbiór i zwrot są porównywane co do minuty, a podany zakres jest w UTC.
+     * Końce zakresu mogą się stykać, więc przerwę między wynajmami dolicza wywołujący.
+     * Przy edycji rezerwacja nie może blokować sama siebie.
      *
      * @param  Builder<Car>  $query
      */
-    public function scopeAvailableBetween(Builder $query, string $from, string $to): void
+    public function scopeAvailableBetween(Builder $query, CarbonInterface $from, CarbonInterface $to, ?int $exceptReservationId = null): void
     {
         $query->whereDoesntHave('reservations', fn (Builder $reservation) => $reservation
-            ->whereDate('start_date', '<=', $to)
-            ->whereDate('end_date', '>=', $from)
+            ->when($exceptReservationId !== null, fn (Builder $own) => $own->whereKeyNot($exceptReservationId))
+            ->where('start_date', '<', $to)
+            ->where('end_date', '>', $from)
             ->where(fn (Builder $status) => $status
                 ->where('status', ReservationStatus::Confirmed)
                 ->orWhere(fn (Builder $pending) => $pending

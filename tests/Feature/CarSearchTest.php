@@ -36,6 +36,9 @@ test('search filters cars', function (array $filters, int $count) {
         ->assertInertia(fn (Assert $page) => $page->has('cars', $count));
 })->with([
     'rodzaj pojazdu' => [['vehicle_type' => 'tow_truck'], 2],
+    'prawo jazdy B' => [['license' => 'b'], 4],
+    'prawo jazdy C' => [['license' => 'c'], 2],
+    'prawo jazdy D' => [['license' => 'd'], 2],
     'paliwo' => [['fuel' => 'hybrid'], 1],
     'drzwi' => [['doors' => 2], 2],
     'cena od' => [['priceFrom' => 500], 1],
@@ -98,6 +101,7 @@ test('invalid search returns to home page with errors', function (array $filters
         ->assertSessionHasErrors($field);
 })->with([
     'zły rodzaj pojazdu' => [['vehicle_type' => 'tank'], 'vehicle_type'],
+    'złe prawo jazdy' => [['license' => 'x'], 'license'],
     'złe paliwo' => [['fuel' => 'steam'], 'fuel'],
     'złe drzwi' => [['doors' => 9], 'doors'],
     'ujemna cena' => [['priceFrom' => -1], 'priceFrom'],

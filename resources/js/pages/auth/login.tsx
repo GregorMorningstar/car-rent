@@ -1,14 +1,23 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { register } from '@/routes';
 import login from '@/routes/login';
+import password from '@/routes/password';
 
 export default function Login() {
+    const { flash } = usePage().props;
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
             <Head title="Logowanie" />
 
             <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
                 <h1 className="mb-6 text-xl font-semibold">Zaloguj się</h1>
+
+                {flash && (
+                    <p role="status" className="mb-4 text-sm text-emerald-700">
+                        {flash}
+                    </p>
+                )}
 
                 <Form
                     {...login.store.form()}
@@ -74,6 +83,12 @@ export default function Login() {
                             >
                                 {processing ? 'Logowanie...' : 'Zaloguj'}
                             </button>
+
+                            <p className="text-center text-sm text-gray-600">
+                                <Link href={password.request()} className="font-medium text-gray-900 underline">
+                                    Nie pamiętasz hasła?
+                                </Link>
+                            </p>
 
                             <p className="text-center text-sm text-gray-600">
                                 Nie masz konta?{' '}

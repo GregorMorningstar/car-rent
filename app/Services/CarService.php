@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CarStatus;
+use App\Enums\DrivingLicense;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Enums\VehicleType;
@@ -11,6 +12,7 @@ use App\Models\Color;
 use App\Models\Equipment;
 use App\Models\Location;
 use App\Repositories\Contracts\CarRepositoryInterface;
+use App\Support\LocalDate;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\UploadedFile;
@@ -43,6 +45,7 @@ class CarService
         'brand' => 'marka',
         'model' => 'model',
         'vehicle_type' => 'rodzaj pojazdu',
+        'required_license' => 'wymagane prawo jazdy',
         'registration_number' => 'numer rejestracyjny',
         'vin' => 'VIN',
         'production_year' => 'rok produkcji',
@@ -75,6 +78,7 @@ class CarService
         'from' => 'data odbioru',
         'to' => 'data zwrotu',
         'vehicle_type' => 'rodzaj pojazdu',
+        'license' => 'wymagane prawo jazdy',
         'doors' => 'ilość drzwi',
         'transmission' => 'skrzynia biegów',
         'days' => 'liczba dni',
@@ -213,8 +217,8 @@ class CarService
             ...$this->searchRules($filters),
             'pickup' => ['required', 'integer', $this->locationRule('is_pickup')],
             'dropoff' => ['required', 'integer', $this->locationRule('is_dropoff')],
-            'from' => ['required', 'date', 'after_or_equal:today'],
-            'to' => ['required', 'date', 'after_or_equal:from'],
+            'from' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.LocalDate::today()],
+            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
         ];
 
         return $this->carRepository->searchCars($this->withRentalDays(
@@ -368,6 +372,7 @@ class CarService
             'brand' => ['required', 'string', 'max:100'],
             'model' => ['required', 'string', 'max:100'],
             'vehicle_type' => ['required', Rule::enum(VehicleType::class)],
+            'required_license' => ['required', Rule::enum(DrivingLicense::class)],
             'registration_number' => ['required', 'string', 'max:20', Rule::unique(Car::class)->ignore($car['id'] ?? null)],
             'vin' => ['required', 'string', 'size:17', Rule::unique(Car::class)->ignore($car['id'] ?? null)],
             'production_year' => ['required', 'integer', 'min:1990', 'max:'.(now()->year + 1)],
@@ -425,10 +430,11 @@ class CarService
         return [
             'pickup' => ['nullable', 'integer', $this->locationRule('is_pickup')],
             'dropoff' => ['nullable', 'integer', $this->locationRule('is_dropoff')],
-            'from' => ['nullable', 'required_with:to', 'date', 'after_or_equal:today'],
-            'to' => ['nullable', 'required_with:from', 'date', 'after_or_equal:from'],
+            'from' => ['nullable', 'required_with:to', 'date_format:Y-m-d', 'after_or_equal:'.LocalDate::today()],
+            'to' => ['nullable', 'required_with:from', 'date_format:Y-m-d', 'after_or_equal:from'],
             'days' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_RENTAL_DAYS],
             'vehicle_type' => ['nullable', Rule::enum(VehicleType::class)],
+            'license' => ['nullable', Rule::enum(DrivingLicense::class)],
             'doors' => ['nullable', 'integer', 'between:2,5'],
             'priceFrom' => ['nullable', 'numeric', 'min:0'],
             'priceTo' => [

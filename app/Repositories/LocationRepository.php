@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\CarStatus;
 use App\Models\Location;
 use App\Repositories\Contracts\LocationRepositoryInterface;
+use App\Support\LocalDate;
 use Illuminate\Database\Eloquent\Builder;
 
 class LocationRepository implements LocationRepositoryInterface
@@ -29,14 +30,14 @@ class LocationRepository implements LocationRepositoryInterface
     /** Szczegółowa lista w panelu: "cars_count" to wszystkie auta, "available_cars_count" to wolne dzisiaj. */
     public function allLocations(): array
     {
-        $today = now()->toDateString();
+        $today = LocalDate::today();
 
         return $this->model->newQuery()
             ->withCount([
                 'cars',
                 'cars as available_cars_count' => fn (Builder $query) => $query
                     ->where('operational_status', CarStatus::Active)
-                    ->availableBetween($today, $today),
+                    ->availableBetween(LocalDate::startOfDay($today), LocalDate::endOfDay($today)),
             ])
             ->orderBy('name')
             ->get()

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CarStatus;
+use App\Enums\DrivingLicense;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Enums\VehicleType;
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->string('model', 100);
             // Rodzaj pojazdu: passenger, van, bus, tow_truck / Vehicle type
             $table->enum('vehicle_type', VehicleType::values())->default(VehicleType::Passenger->value);
+            // Wymagane prawo jazdy: b (do 3,5 t), c (powyżej 3,5 t), d (autobus) / Required driving licence
+            $table->enum('required_license', DrivingLicense::values())->default(DrivingLicense::B->value);
             // Numer rejestracyjny / Registration number
             $table->string('registration_number', 20)->unique();
             // Numer VIN / VIN number

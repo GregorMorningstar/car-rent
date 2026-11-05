@@ -163,6 +163,15 @@ export default function AppHeader() {
                   },
               ]
             : []),
+        ...(user?.role === 'user'
+            ? [
+                  {
+                      label: 'Mój panel',
+                      href: userRoutes.dashboard(),
+                      active: path.startsWith(userRoutes.dashboard.url()),
+                  },
+              ]
+            : []),
     ];
 
     return (

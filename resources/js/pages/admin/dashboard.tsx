@@ -1,11 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { cars } from '@/components/admin/data/cars';
-import { clients } from '@/components/admin/data/clients';
-import type { ReservationStatus } from '@/components/admin/data/labels';
-import { allReservations } from '@/components/admin/data/reservations';
 import ReservationTile from '@/components/admin/reservations/reservation-tile';
+import type { AdminReservation } from '@/components/admin/reservations/types';
 import PageHeader from '@/components/ui/page-header';
 import Pagination from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/use-pagination';
@@ -26,27 +22,19 @@ function StatTile({ label, value, href }: { label: string; value: number; href: 
     );
 }
 
-export default function AdminDashboard() {
-    // Decyzje podjęte na tej stronie (podgląd - bez zapisu do bazy).
-    const [decisions, setDecisions] = useState<Record<number, ReservationStatus>>({});
-
-    const reservations = allReservations();
-    const latest = reservations
-        .filter((reservation) => reservation.status === 'pending')
-        .map((reservation) => {
-            const decision = decisions[reservation.id];
-
-            return decision ? { ...reservation, status: decision, state: decision } : reservation;
-        });
-    const pagination = usePagination(latest, TILES_PER_PAGE);
-
-    const decide = (id: number, status: ReservationStatus) =>
-        setDecisions((previous) => ({ ...previous, [id]: status }));
-
-    const waiting = latest.filter((reservation) => reservation.state === 'pending').length;
-    const ongoing = reservations.filter(
-        (reservation) => reservation.state === 'confirmed' && reservation.start_date <= new Date().toISOString().slice(0, 10),
-    ).length;
+export default function AdminDashboard({
+    reservations,
+    failed,
+    stats,
+    clientCount,
+}: {
+    reservations: AdminReservation[];
+    failed: boolean;
+    stats: { waiting: number; ongoing: number; cars: number };
+    clientCount: number;
+}) {
+    const pagination = usePagination(reservations, TILES_PER_PAGE);
+    const decide = (url: string) => router.post(url, {}, { preserveScroll: true });
 
     return (
         <>
@@ -55,14 +43,10 @@ export default function AdminDashboard() {
             <PageHeader title="Pulpit" description="Najnowsze rezerwacje i stan wypożyczalni." />
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                <StatTile label="Do potwierdzenia" value={waiting} href={admin.reservations.index()} />
-                <StatTile label="Trwające wynajmy" value={ongoing} href={admin.reservations.index()} />
-                <StatTile
-                    label="Dostępne auta"
-                    value={cars.filter((car) => car.operational_status === 'active').length}
-                    href={admin.cars.index()}
-                />
-                <StatTile label="Klienci" value={clients.length} href={admin.clients.index()} />
+                <StatTile label="Do potwierdzenia" value={stats.waiting} href={admin.reservations.index()} />
+                <StatTile label="Trwające wynajmy" value={stats.ongoing} href={admin.reservations.index()} />
+                <StatTile label="Dostępne auta" value={stats.cars} href={admin.cars.index()} />
+                <StatTile label="Klienci" value={clientCount} href={admin.clients.index()} />
             </div>
 
             <section className="mt-8 lg:mt-10">
@@ -79,7 +63,11 @@ export default function AdminDashboard() {
                     </Link>
                 </div>
 
-                {latest.length === 0 ? (
+                {failed ? (
+                    <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        Nie udało się wczytać rezerwacji. Spróbuj ponownie później.
+                    </p>
+                ) : reservations.length === 0 ? (
                     <p className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-gray-500">
                         Brak nowych rezerwacji.
                     </p>
@@ -89,8 +77,8 @@ export default function AdminDashboard() {
                             <li key={reservation.id}>
                                 <ReservationTile
                                     reservation={reservation}
-                                    onAccept={() => decide(reservation.id, 'confirmed')}
-                                    onReject={() => decide(reservation.id, 'cancelled')}
+                                    onAccept={() => decide(admin.reservations.confirm(reservation.id).url)}
+                                    onReject={() => decide(admin.reservations.reject(reservation.id).url)}
                                 />
                             </li>
                         ))}

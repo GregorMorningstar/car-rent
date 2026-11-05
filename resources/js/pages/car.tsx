@@ -1,6 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { fuelTypeLabels, transmissionLabels, vehicleTypeLabels } from '@/components/admin/data/labels';
+import { fuelTypeLabels, licenseLabels, transmissionLabels, vehicleTypeLabels } from '@/components/admin/data/labels';
 import type { FuelType, Transmission } from '@/components/admin/data/labels';
 import CarCarousel from '@/components/cars/car-carousel';
 import { publicCarName } from '@/components/cars/car-card';
@@ -11,7 +11,8 @@ import EquipmentList from '@/components/ui/equipment-list';
 import SiteLayout from '@/layouts/site-layout';
 import { formatMoney } from '@/lib/format';
 import { kmLimitLabel, tierLabel } from '@/lib/pricing';
-import { cars as carsRoute, reservation } from '@/routes';
+import { cars as carsRoute } from '@/routes';
+import carsRoutes from '@/routes/cars';
 
 /** Szczegóły samochodu - dane z CarService::findPublicCar, bez VIN, rejestracji i przebiegu. */
 type CarDetails = PublicCar & {
@@ -33,6 +34,7 @@ function Spec({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default function Car({ car }: { car: CarDetails }) {
+    const { auth } = usePage().props;
     const name = publicCarName(car);
 
     return (
@@ -86,6 +88,7 @@ export default function Car({ car }: { car: CarDetails }) {
 
                         <dl className="mt-4 divide-y divide-gray-100 border-y border-gray-100 text-sm">
                             <Spec label="Rodzaj">{vehicleTypeLabels[car.vehicle_type]}</Spec>
+                            <Spec label="Wymagane prawo jazdy">{licenseLabels[car.required_license]}</Spec>
                             <Spec label="Rok produkcji">{car.production_year}</Spec>
                             <Spec label="Paliwo">{fuelTypeLabels[car.fuel_type]}</Spec>
                             <Spec label="Skrzynia">{transmissionLabels[car.transmission]}</Spec>
@@ -103,9 +106,11 @@ export default function Car({ car }: { car: CarDetails }) {
                             )}
                         </dl>
 
-                        <Link href={reservation({ query: { car: car.id } })} className={buttonClass('primary', 'lg', 'mt-5 w-full')}>
-                            Zarezerwuj
-                        </Link>
+                        {auth.user?.role !== 'administrator' && (
+                            <Link href={carsRoutes.book(car.id)} className={buttonClass('primary', 'lg', 'mt-5 w-full')}>
+                                Zarezerwuj
+                            </Link>
+                        )}
                     </aside>
                 </div>
             </div>

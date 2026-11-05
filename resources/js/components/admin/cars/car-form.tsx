@@ -10,7 +10,7 @@ import { inputClass } from '@/components/ui/input';
 import type { PriceTier } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 import admin from '@/routes/admin';
-import { carStatuses, fuelTypeLabels, toOptions, transmissionLabels, vehicleTypeLabels } from '../data/labels';
+import { carStatuses, fuelTypeLabels, licenseLabels, toOptions, transmissionLabels, vehicleTypeLabels } from '../data/labels';
 
 export type CarOption = { id: number; name: string; icon?: string | null; icon_svg?: IconSvg | null; hex?: string };
 
@@ -22,6 +22,7 @@ export type EditableCar = {
     brand: string;
     model: string;
     vehicle_type: string;
+    required_license: string;
     registration_number: string;
     vin: string;
     production_year: number;
@@ -49,6 +50,7 @@ const emptyCar = {
     brand: '',
     model: '',
     vehicle_type: 'passenger',
+    required_license: 'b',
     registration_number: '',
     vin: '',
     production_year: '',
@@ -80,6 +82,7 @@ const toFormData = (car?: EditableCar): Data =>
               brand: car.brand,
               model: car.model,
               vehicle_type: car.vehicle_type,
+              required_license: car.required_license,
               registration_number: car.registration_number,
               vin: car.vin,
               production_year: String(car.production_year),
@@ -312,6 +315,9 @@ export default function CarForm({
             <Section title="Parametry">
                 <FormField label="Rodzaj pojazdu" id="vehicle_type" error={errors.vehicle_type}>
                     <Select {...bind('vehicle_type')} options={toOptions(vehicleTypeLabels)} />
+                </FormField>
+                <FormField label="Wymagane prawo jazdy" id="required_license" error={errors.required_license}>
+                    <Select {...bind('required_license')} options={toOptions(licenseLabels)} />
                 </FormField>
                 <FormField label="Rodzaj paliwa" id="fuel_type" error={errors.fuel_type}>
                     <Select {...bind('fuel_type')} options={toOptions(fuelTypeLabels)} />

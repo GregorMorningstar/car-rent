@@ -1,10 +1,13 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent, InputHTMLAttributes, ReactNode } from 'react';
 import { buttonClass } from '@/components/ui/button';
 import { inputClass } from '@/components/ui/input';
 import PageHeader from '@/components/ui/page-header';
+import RentalHistory from '@/components/user/rental-history';
+import type { UserRental } from '@/components/user/rental-history';
 import UserLayout from '@/layouts/user-layout';
+import userRoutes from '@/routes/user';
 
 function Card({
     title,
@@ -64,8 +67,8 @@ function Field({
     );
 }
 
-export default function UserProfile() {
-    const { auth } = usePage().props;
+export default function UserProfile({ rentals, failed }: { rentals: UserRental[]; failed: boolean }) {
+    const { auth, flash } = usePage().props;
 
     return (
         <>
@@ -84,7 +87,7 @@ export default function UserProfile() {
                     <Field label="Imię i nazwisko" id="name" defaultValue={auth.user?.name} autoComplete="name" wide />
                     <Field label="Adres e-mail" id="email" type="email" defaultValue={auth.user?.email} autoComplete="email" />
                     <Field label="Telefon" id="phone" type="tel" placeholder="+48 000 000 000" autoComplete="tel" inputMode="tel" />
-                    <Field label="Numer prawa jazdy" id="license" placeholder="np. 01234/26/1863" />
+                    <Field label="Numer prawa jazdy (opcjonalnie)" id="license" placeholder="np. 01234/26/1863" />
                     <Field label="Data urodzenia" id="birthdate" type="date" autoComplete="bday" />
                 </Card>
 
@@ -96,6 +99,23 @@ export default function UserProfile() {
                     <Field label="Nowe hasło" id="password" type="password" autoComplete="new-password" minLength={8} />
                     <Field label="Powtórz nowe hasło" id="password_confirmation" type="password" autoComplete="new-password" minLength={8} />
                 </Card>
+
+                <section aria-labelledby="rental-history">
+                    <div className="mb-3 flex items-center justify-between gap-4">
+                        <h2 id="rental-history" className="font-semibold text-gray-900">
+                            Historia wypożyczeń
+                        </h2>
+                        <Link href={userRoutes.rentals()} className="text-sm font-medium text-brand-600 hover:text-brand-700">
+                            Zobacz wszystkie
+                        </Link>
+                    </div>
+                    {flash && (
+                    <p role="status" className="mb-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        {flash}
+                    </p>
+                )}
+                <RentalHistory rentals={rentals} failed={failed} emptyText="Nie masz jeszcze żadnych wypożyczeń." />
+                </section>
             </div>
         </>
     );

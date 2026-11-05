@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Car;
+use App\Models\Reservation;
+use App\Repositories\Contracts\ReservationRepositoryInterface;
 use App\Services\CarService;
 use App\Services\ColorService;
 use App\Services\EquipmentService;
 use App\Services\LocationService;
+use App\Services\ReservationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +22,6 @@ use Throwable;
 
 /**
  * Samochody w panelu administratora.
- * Historia wypożyczeń korzysta jeszcze z danych przykładowych po stronie frontu.
  */
 class CarController extends Controller
 {
@@ -32,6 +34,8 @@ class CarController extends Controller
 
     public function index(): Response
     {
+        Gate::authorize('update', Car::class);
+
         return Inertia::render('admin/cars/index', [
             'cars' => $this->carService->allCars(),
         ]);
@@ -39,6 +43,8 @@ class CarController extends Controller
 
     public function create(): Response
     {
+        Gate::authorize('create', Car::class);
+
         return Inertia::render('admin/cars/create', [
             'equipment' => $this->equipmentService->activeEquipment(),
             'colors' => $this->colorService->activeColors(),
@@ -48,6 +54,8 @@ class CarController extends Controller
 
     public function edit(int $id): Response
     {
+        Gate::authorize('update', Car::class);
+
         return Inertia::render('admin/cars/edit', [
             'car' => $this->carService->findCarForEdit($id),
             'equipment' => $this->equipmentService->activeEquipment(),
@@ -57,10 +65,16 @@ class CarController extends Controller
     }
 
     /** Historia wypożyczeń - wszystkich aut albo jednego (?car=ID). */
-    public function history(Request $request): Response
+    public function history(Request $request, ReservationService $reservations, ReservationRepositoryInterface $repository): Response
     {
+        Gate::authorize('manage', Reservation::class);
+
+        $carId = $request->integer('car') ?: null;
+
         return Inertia::render('admin/cars/history', [
-            'carId' => $request->integer('car') ?: null,
+            ...$reservations->list(carId: $carId),
+            'carId' => $carId,
+            'cars' => $repository->carOptions($carId),
         ]);
     }
 

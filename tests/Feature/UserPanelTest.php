@@ -6,6 +6,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 dataset('user panel pages', [
     'pulpit' => ['user.dashboard', 'user/dashboard'],
     'historia wynajmu' => ['user.rentals', 'user/rentals'],
+    'wiadomości' => ['user.messages.index', 'user/messages'],
     'płatności' => ['user.payments', 'user/payments'],
     'profil' => ['user.profile', 'user/profile'],
 ]);

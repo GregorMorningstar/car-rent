@@ -22,6 +22,14 @@ return new class extends Migration
             $table->rememberToken();
             // Data i godzina ostatniego logowania / Last login date and time
             $table->timestamp('last_login_at')->nullable();
+            // Zaszyfrowany sekret kodów logowania / Encrypted two-factor secret
+            $table->text('two_factor_secret')->nullable();
+            // Zaszyfrowane skróty kodów zapasowych / Encrypted recovery code hashes
+            $table->text('two_factor_recovery_codes')->nullable();
+            // Włączenie logowania dwuetapowego / Two-factor confirmed at
+            $table->timestamp('two_factor_confirmed_at')->nullable();
+            // Ostatnio użyty kod, żeby nie zadziałał drugi raz / Last used step, prevents replay
+            $table->unsignedBigInteger('two_factor_last_step')->nullable();
             $table->timestamps();
         });
 

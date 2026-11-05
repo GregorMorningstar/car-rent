@@ -41,7 +41,7 @@ class PageController extends Controller
             'equipment' => $equipmentService->activeEquipment(),
             'pickupLocations' => $locationService->pickupLocations(),
             'filters' => $request->only([
-                'pickup', 'from', 'to', 'days', 'vehicle_type', 'fuel', 'transmission', 'doors', 'priceFrom', 'priceTo', 'equipment',
+                'pickup', 'from', 'to', 'days', 'vehicle_type', 'license', 'fuel', 'transmission', 'doors', 'priceFrom', 'priceTo', 'equipment',
             ]),
         ]);
     }

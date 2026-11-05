@@ -22,6 +22,7 @@ function pricedCarData(array $prices, array $overrides = []): array
         'doors' => 5,
         'seats' => 5,
         'mileage_km' => 15000,
+        'required_license' => 'b',
         'deposit_amount' => '1000.00',
         'operational_status' => 'active',
         'prices' => $prices,

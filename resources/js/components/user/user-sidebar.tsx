@@ -5,6 +5,8 @@ import { home, logout } from '@/routes';
 import user from '@/routes/user';
 
 const icons = {
+    messages:
+        'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z',
     dashboard:
         'M2.25 12l8.954-8.955a1.126 1.126 0 0 1 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75',
     rentals:
@@ -35,15 +37,22 @@ function Icon({ path, className }: { path: string; className?: string }) {
 const navigation = [
     { label: 'Pulpit', route: user.dashboard, icon: icons.dashboard },
     { label: 'Historia wynajmu', route: user.rentals, icon: icons.rentals },
+    { label: 'Wiadomości', route: user.messages.index, icon: icons.messages, unread: true },
     { label: 'Płatności', route: user.payments, icon: icons.payments },
     { label: 'Mój profil', route: user.profile, icon: icons.profile },
 ];
 
 export default function UserSidebar() {
-    const { auth } = usePage().props;
+    const { auth, notifications } = usePage().props;
+    const unread = notifications?.messages ?? 0;
     const path = usePage().url.split('?')[0];
     const isActive = (route: (typeof navigation)[number]['route']) =>
         path === route.url();
+
+    const badge = (item: (typeof navigation)[number]) =>
+        'unread' in item && unread > 0 ? (
+            <span className="ml-auto rounded-full bg-brand-600 px-2 text-xs font-semibold text-white tabular-nums">{unread}</span>
+        ) : null;
 
     return (
         <>
@@ -66,6 +75,7 @@ export default function UserSidebar() {
                     >
                         <Icon path={item.icon} className="size-4" />
                         {item.label}
+                        {badge(item)}
                     </Link>
                 ))}
             </nav>
@@ -102,6 +112,7 @@ export default function UserSidebar() {
                         >
                             <Icon path={item.icon} />
                             {item.label}
+                            {badge(item)}
                         </Link>
                     ))}
 

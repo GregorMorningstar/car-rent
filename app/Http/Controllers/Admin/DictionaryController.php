@@ -30,6 +30,8 @@ class DictionaryController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('manageDictionary', Car::class);
+
         $equipmentSearch = $this->searchTerm($request, 'equipment_search');
         $colorsSearch = $this->searchTerm($request, 'colors_search');
 

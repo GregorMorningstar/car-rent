@@ -2,12 +2,11 @@ import { Link } from '@inertiajs/react';
 import StatusBadge from '@/components/ui/status-badge';
 import { EmptyRow, Table, Td, Th } from '@/components/ui/table';
 import { formatDate } from '@/lib/format';
+import { openOnClick } from '@/lib/open-on-click';
 import admin from '@/routes/admin';
 import type { Client } from '../data/clients';
 
-export type ClientRow = Client & { reservationsCount: number };
-
-export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
+export default function ClientsTable({ clients }: { clients: Client[] }) {
     return (
         <Table
             head={
@@ -27,7 +26,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
             {clients.length === 0 && <EmptyRow colSpan={7}>Brak klientów.</EmptyRow>}
 
             {clients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50">
+                <tr key={client.id} onClick={openOnClick(admin.clients.show(client.id).url)} className="cursor-pointer hover:bg-gray-50">
                     <Td>
                         <Link
                             href={admin.clients.show(client.id)}
@@ -47,7 +46,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                         )}
                     </Td>
                     <Td className="text-right tabular-nums">{client.reservationsCount}</Td>
-                    <Td className="whitespace-nowrap">{formatDate(client.created_at)}</Td>
+                    <Td className="whitespace-nowrap">{client.created_at ? formatDate(client.created_at) : '–'}</Td>
                     <Td className="text-right">
                         <Link
                             href={admin.clients.show(client.id)}

@@ -1,80 +1,69 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import type { RentalStatus } from '@/components/user/data';
-import { rentals, rentalStatuses } from '@/components/user/data';
 import PageHeader from '@/components/ui/page-header';
-import RentalsList from '@/components/user/rentals-list';
+import RentalHistory, { rentalStates } from '@/components/user/rental-history';
+import type { RentalState, UserRental } from '@/components/user/rental-history';
 import UserLayout from '@/layouts/user-layout';
 import { cn } from '@/lib/utils';
+import userRoutes from '@/routes/user';
 
-type Filter = RentalStatus | 'all';
-
-const filters: { value: Filter; label: string }[] = [
-    { value: 'all', label: 'Wszystkie' },
-    ...(Object.keys(rentalStatuses) as RentalStatus[]).map((status) => ({
-        value: status,
-        label: rentalStatuses[status].label,
-    })),
+const tabs: { value: RentalState | null; label: string }[] = [
+    { value: null, label: 'Wszystkie' },
+    ...(Object.keys(rentalStates) as RentalState[]).map((value) => ({ value, label: rentalStates[value].label })),
 ];
 
-export default function UserRentals() {
-    const [filter, setFilter] = useState<Filter>('all');
-
-    const count = (value: Filter) =>
-        value === 'all'
-            ? rentals.length
-            : rentals.filter((rental) => rental.status === value).length;
-
-    const visible =
-        filter === 'all'
-            ? rentals
-            : rentals.filter((rental) => rental.status === filter);
+export default function UserRentals({
+    rentals,
+    counts,
+    status,
+    failed,
+}: {
+    rentals: UserRental[];
+    counts: Record<RentalState, number>;
+    status: RentalState | null;
+    failed: boolean;
+}) {
+    const { flash } = usePage().props;
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
     return (
         <>
             <Head title="Historia wynajmu" />
 
-            <PageHeader
-                title="Historia wynajmu"
-                description="Wszystkie Twoje wynajmy i rezerwacje w jednym miejscu."
-            />
+            <PageHeader title="Historia wynajmu" description="Wszystkie Twoje wynajmy i rezerwacje w jednym miejscu." />
 
-            <div
-                role="tablist"
-                aria-label="Filtruj wynajmy"
-                className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
-            >
-                {filters.map((item) => (
-                    <button
-                        key={item.value}
-                        type="button"
-                        role="tab"
-                        aria-selected={filter === item.value}
-                        onClick={() => setFilter(item.value)}
+            {flash && (
+                <p role="status" className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    {flash}
+                </p>
+            )}
+
+            <nav aria-label="Filtruj wynajmy" className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+                {tabs.map((tab) => (
+                    <Link
+                        key={tab.label}
+                        href={userRoutes.rentals(tab.value ? { query: { status: tab.value } } : undefined)}
+                        preserveScroll
+                        aria-current={status === tab.value ? 'page' : undefined}
                         className={cn(
                             'flex h-10 shrink-0 items-center gap-2 rounded-lg px-3.5 text-sm font-medium transition-colors',
-                            filter === item.value
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100',
+                            status === tab.value ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100',
                         )}
                     >
-                        {item.label}
+                        {tab.label}
                         <span
                             className={cn(
                                 'rounded-full px-1.5 text-xs tabular-nums',
-                                filter === item.value
-                                    ? 'bg-white/20'
-                                    : 'bg-gray-100 text-gray-500',
+                                status === tab.value ? 'bg-white/20' : 'bg-gray-100 text-gray-500',
                             )}
                         >
-                            {count(item.value)}
+                            {tab.value ? counts[tab.value] : total}
                         </span>
-                    </button>
+                    </Link>
                 ))}
-            </div>
+            </nav>
 
-            <RentalsList rentals={visible} />
+            <RentalHistory rentals={rentals} failed={failed} emptyText="Brak wynajmów w tej kategorii." />
         </>
     );
 }

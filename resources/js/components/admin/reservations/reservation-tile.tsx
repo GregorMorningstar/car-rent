@@ -1,15 +1,14 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { buttonClass } from '@/components/ui/button';
-import { daysBetween, formatDate, formatDateTime, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
+import { openOnClick } from '@/lib/open-on-click';
 import admin from '@/routes/admin';
-import { carName } from '../data/cars';
-import type { ReservationWithRelations } from '../data/reservations';
-import { reservationNumber } from '../data/reservations';
 import ReservationStatusBadge from './reservation-status-badge';
+import type { AdminReservation } from './types';
 
 type Props = {
-    reservation: ReservationWithRelations;
+    reservation: AdminReservation;
     onAccept: () => void;
     onReject: () => void;
 };
@@ -34,13 +33,19 @@ const icons = {
 export default function ReservationTile({ reservation, onAccept, onReject }: Props) {
     const { client, car } = reservation;
     const pending = reservation.state === 'pending';
+    const details = admin.reservations.edit(reservation.id);
 
     return (
-        <article className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white">
+        <article
+            onClick={openOnClick(details.url)}
+            className="flex h-full cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
+        >
             <header className="flex items-start justify-between gap-3 border-b border-gray-100 p-4">
                 <div className="min-w-0">
-                    <p className="truncate font-semibold text-gray-900">{reservationNumber(reservation)}</p>
-                    <p className="text-xs text-gray-500">Złożona {formatDateTime(reservation.created_at)}</p>
+                    <Link href={details} className="block truncate font-semibold text-gray-900 hover:text-brand-600">
+                        {reservation.number}
+                    </Link>
+                    {reservation.created_at && <p className="text-xs text-gray-500">Złożona {formatDateTime(reservation.created_at)}</p>}
                 </div>
                 <ReservationStatusBadge state={reservation.state} />
             </header>
@@ -56,18 +61,15 @@ export default function ReservationTile({ reservation, onAccept, onReject }: Pro
                     <a href={`mailto:${client.email}`} className="block truncate text-gray-500 hover:text-gray-900">
                         {client.email}
                     </a>
-                    {client.profile && (
-                        <a
-                            href={`tel:${client.profile.phone.replaceAll(' ', '')}`}
-                            className="block text-gray-500 hover:text-gray-900"
-                        >
-                            {client.profile.phone}
+                    {client.phone && (
+                        <a href={`tel:${client.phone.replaceAll(' ', '')}`} className="block text-gray-500 hover:text-gray-900">
+                            {client.phone}
                         </a>
                     )}
                 </Row>
 
                 <Row icon={icons.car}>
-                    <p className="truncate font-medium text-gray-900">{carName(car)}</p>
+                    <p className="truncate font-medium text-gray-900">{car.name}</p>
                     <p className="text-gray-500">{car.registration_number}</p>
                 </Row>
 
@@ -76,8 +78,8 @@ export default function ReservationTile({ reservation, onAccept, onReject }: Pro
                         {formatDate(reservation.start_date)} – {formatDate(reservation.end_date)}
                     </p>
                     <p className="text-gray-500">
-                        {daysBetween(reservation.start_date, reservation.end_date)} dni ·{' '}
-                        <span className="font-semibold text-gray-900">{formatMoney(reservation.total_price)}</span>
+                        {reservation.days} dni ·{' '}
+                        <span className="font-semibold text-gray-900">{formatMoney(Number(reservation.total_price))}</span>
                     </p>
                 </Row>
 
@@ -103,10 +105,7 @@ export default function ReservationTile({ reservation, onAccept, onReject }: Pro
                 >
                     Odrzuć
                 </button>
-                <Link
-                    href={admin.reservations.edit(reservation.id)}
-                    className={buttonClass('outline', 'sm', 'col-span-2 border-gray-300')}
-                >
+                <Link href={details} className={buttonClass('outline', 'sm', 'col-span-2 border-gray-300')}>
                     Edytuj
                 </Link>
             </footer>

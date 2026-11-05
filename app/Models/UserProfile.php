@@ -31,6 +31,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UserProfile extends Model
 {
     /**
+     * Dane kontaktowe są szyfrowane w bazie.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'phone' => 'encrypted',
+            'street' => 'encrypted',
+            'building_number' => 'encrypted',
+            'apartment_number' => 'encrypted',
+            'postal_code' => 'encrypted',
+            'city' => 'encrypted',
+        ];
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

@@ -1,9 +1,15 @@
+import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import AppHeader from '@/components/app-header';
 import EmailVerificationBanner from '@/components/email-verification-banner';
 import UserSidebar from '@/components/user/user-sidebar';
+import useLiveUpdates from '@/hooks/use-live-updates';
 
 export default function UserLayout({ children }: { children: ReactNode }) {
+    const { auth } = usePage().props;
+
+    useLiveUpdates(`App.Models.User.${auth.user?.id}`);
+
     return (
         <div className="flex min-h-dvh flex-col overflow-x-clip bg-gray-50 text-gray-900">
             <AppHeader />

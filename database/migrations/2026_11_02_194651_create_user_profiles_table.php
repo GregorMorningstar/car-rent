@@ -16,18 +16,19 @@ return new class extends Migration
             $table->id();
             // Użytkownik (relacja 1:1) / User (one-to-one relation)
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
+            // Dane poniżej są szyfrowane, stąd typ text / Fields below are encrypted, hence text
             // Numer telefonu / Phone number
-            $table->string('phone', 20)->unique();
+            $table->text('phone');
             // Ulica / Street
-            $table->string('street', 150);
+            $table->text('street');
             // Numer budynku / Building number
-            $table->string('building_number', 10);
+            $table->text('building_number');
             // Numer lokalu / Apartment number
-            $table->string('apartment_number', 10)->nullable();
+            $table->text('apartment_number')->nullable();
             // Kod pocztowy, np. 00-001 / Postal code, e.g. 00-001
-            $table->string('postal_code', 10);
+            $table->text('postal_code');
             // Miejscowość / City
-            $table->string('city', 100);
+            $table->text('city');
             // Data utworzenia i aktualizacji / Created at and updated at
             $table->timestamps();
         });

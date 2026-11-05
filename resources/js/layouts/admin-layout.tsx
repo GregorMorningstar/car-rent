@@ -2,6 +2,8 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import AdminSidebar from '@/components/admin/layout/admin-sidebar';
+import NotificationsMenu from '@/components/admin/layout/notifications-menu';
+import useLiveUpdates from '@/hooks/use-live-updates';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import admin from '@/routes/admin';
@@ -9,6 +11,8 @@ import admin from '@/routes/admin';
 export default function AdminLayout({ children }: { children: ReactNode }) {
     const { auth, name } = usePage().props;
     const [drawerOpen, setDrawerOpen] = useState(false);
+
+    useLiveUpdates('admin.inbox');
 
     // Menu mobilne zamyka się po przejściu na inną stronę i klawiszem Esc.
     useEffect(() => router.on('navigate', () => setDrawerOpen(false)), []);
@@ -79,6 +83,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     </Link>
 
                     <div className="ml-auto flex items-center gap-3 text-sm">
+                        <NotificationsMenu />
                         <span className="hidden truncate text-gray-600 sm:block">{auth.user?.name}</span>
                         <Link
                             href={logout()}

@@ -8,7 +8,7 @@ import { buttonClass } from '@/components/ui/button';
 import EquipmentIcon from '@/components/ui/equipment-icon';
 import EquipmentList from '@/components/ui/equipment-list';
 import { inputClass } from '@/components/ui/input';
-import { daysBetween } from '@/lib/format';
+import { daysBetween, localToday } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { cars as carsRoute } from '@/routes';
 import carsRoutes from '@/routes/cars';
@@ -166,13 +166,6 @@ function VehicleTypeChoice({
     );
 }
 
-function today() {
-    const date = new Date();
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-
-    return date.toISOString().slice(0, 10);
-}
-
 const initialFilters = { doors: '', priceFrom: '', priceTo: '', fuel: '' };
 
 /** Małe okno nad stroną startową z samochodami spełniającymi kryteria. */
@@ -180,11 +173,13 @@ function ResultsDialog({
     dialog,
     cars,
     days,
+    bookingQuery,
     allCarsHref,
 }: {
     dialog: RefObject<HTMLDialogElement | null>;
     cars: PublicCar[];
     days?: number;
+    bookingQuery: Record<string, string>;
     allCarsHref: ReturnType<typeof carsRoute>;
 }) {
     return (
@@ -235,6 +230,12 @@ function ResultsDialog({
                                         <RentalPrice fromRate={car.daily_rate} prices={car.prices} days={days} size="text-base" />
                                     </div>
                                     <EquipmentList equipment={car.equipment} className="text-xs" />
+                                    <Link
+                                        href={carsRoutes.book(car.id, { query: bookingQuery })}
+                                        className={buttonClass('dark', 'sm', 'mt-1 self-start')}
+                                    >
+                                        Zarezerwuj
+                                    </Link>
                                 </div>
                             </li>
                         ))}
@@ -375,7 +376,7 @@ export default function SearchForm({
                         id="from"
                         type="date"
                         required
-                        min={today()}
+                        min={localToday()}
                         value={data.from}
                         onChange={(event) => set('from')(event.target.value)}
                         className={inputClass}
@@ -387,7 +388,7 @@ export default function SearchForm({
                         id="to"
                         type="date"
                         required
-                        min={data.from || today()}
+                        min={data.from || localToday()}
                         value={data.to}
                         onChange={(event) => set('to')(event.target.value)}
                         className={inputClass}
@@ -539,6 +540,7 @@ export default function SearchForm({
             dialog={dialog}
             cars={results}
             days={data.from && data.to ? daysBetween(data.from, data.to) : undefined}
+            bookingQuery={{ from: data.from, to: data.to, pickup: data.pickup, dropoff: data.dropoff }}
             allCarsHref={carsRoute({ query })}
         />
         <LocationPicker

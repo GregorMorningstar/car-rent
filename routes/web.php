@@ -5,20 +5,38 @@ use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DictionaryController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\MessengerSettingsController;
+use App\Http\Controllers\Admin\OptionsController;
 use App\Http\Controllers\Admin\ReservationController;
+use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserReservationController;
+use App\Http\Middleware\AuditAdminActions;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::post('/login', [LoginController::class, 'store'])->name('login.store');
+    // LoginRequest limituje parę e-mail + IP, a to chroni przed zgadywaniem wielu kont z jednego adresu.
+    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:20,1')->name('login.store');
+
+    Route::get('/login/kod', [TwoFactorChallengeController::class, 'create'])->name('login.code');
+    Route::post('/login/kod', [TwoFactorChallengeController::class, 'store'])->middleware('throttle:10,1')->name('login.code.verify');
+
+    Route::get('/haslo/przypomnij', [PasswordResetController::class, 'create'])->name('password.request');
+    Route::post('/haslo/przypomnij', [PasswordResetController::class, 'store'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/haslo/nowe/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/haslo/nowe', [PasswordResetController::class, 'update'])->middleware('throttle:6,1')->name('password.update');
 
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:6,1')->name('register.store');
 });
 
 // Strona startowa i podstrony serwisu (dostępne także dla gości)
@@ -33,6 +51,29 @@ Route::get('/rezerwacja', [PageController::class, 'reservation'])->name('reserva
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
+    // Rezerwacja samochodu przez klienta
+    Route::middleware(['verified', 'role:user'])
+        ->controller(BookingController::class)
+        ->prefix('samochody/{id}/rezerwuj')
+        ->whereNumber('id')
+        ->name('cars.book')
+        ->group(function () {
+            Route::get('/', 'create');
+            Route::post('/', 'store')->middleware('throttle:10,1')->name('.store');
+        });
+
+    // Rezerwacje właściciela: edycja i usuwanie
+    Route::middleware('role:user')
+        ->controller(UserReservationController::class)
+        ->prefix('panel/rezerwacje/{id}')
+        ->whereNumber('id')
+        ->name('user.reservations.')
+        ->group(function () {
+            Route::get('/edytuj', 'edit')->name('edit');
+            Route::put('/', 'update')->middleware('throttle:10,1')->name('update');
+            Route::delete('/', 'destroy')->middleware('throttle:10,1')->name('destroy');
+        });
+
     // Panel użytkownika
     Route::middleware('role:user')
         ->prefix('panel')
@@ -41,6 +82,9 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', 'dashboard')->name('dashboard');
             Route::get('/wynajmy', 'rentals')->name('rentals');
+            Route::get('/wiadomosci', 'messages')->name('messages.index');
+            // Bez potwierdzonego adresu konto mogłoby wysyłać spam, który trafia też na Messengera.
+            Route::post('/wiadomosci', 'sendMessage')->middleware(['verified', 'throttle:20,1'])->name('messages.store');
             Route::get('/platnosci', 'payments')->name('payments');
             Route::get('/profil', 'profile')->name('profile');
         });
@@ -56,7 +100,7 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 
     // Panel administratora
-    Route::middleware(['verified', 'role:administrator'])
+    Route::middleware(['verified', 'role:administrator', AuditAdminActions::class])
         ->prefix('admin')
         ->name('admin.')
         ->group(function () {
@@ -70,7 +114,15 @@ Route::middleware('auth')->group(function () {
                     Route::get('/', 'index')->name('index');
                     Route::get('/history', 'history')->name('history');
                     Route::get('/completed', 'completed')->name('completed');
+                    Route::post('/seen', 'markSeen')->name('seen');
+                    Route::post('/{id}/confirm', 'confirm')->whereNumber('id')->name('confirm');
+                    Route::post('/{id}/wplaty', 'storePayment')->whereNumber('id')->name('payments.store');
+                    Route::post('/{id}/wplaty/{payment}/zwrot', 'refundPayment')->whereNumber(['id', 'payment'])->name('payments.refund');
+                    Route::post('/{id}/reject', 'reject')->whereNumber('id')->name('reject');
                     Route::get('/{id}/edit', 'edit')->whereNumber('id')->name('edit');
+                    Route::post('/{id}/edit', 'update')->whereNumber('id')->name('update');
+                    Route::post('/{id}/odbior', 'handOver')->whereNumber('id')->name('handover');
+                    Route::post('/{id}/zwrot', 'takeBack')->whereNumber('id')->name('takeback');
                 });
 
             // Klienci
@@ -94,6 +146,47 @@ Route::middleware('auth')->group(function () {
                     // POST, bo PHP nie odczytuje plików z formularza wysłanego przez PUT.
                     Route::post('/{id}/edit', 'update')->whereNumber('id')->name('update');
                     Route::get('/history', 'history')->name('history');
+                });
+
+            // Rozmowy z klientami
+            Route::controller(MessageController::class)
+                ->prefix('wiadomosci')
+                ->name('messages.')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/otworz', 'open')->name('open');
+                    Route::post('/{conversation}', 'store')->whereNumber('conversation')->middleware('throttle:60,1')->name('store');
+                });
+
+            // Bezpieczeństwo konta i dziennik działań
+            Route::controller(SecurityController::class)
+                ->prefix('bezpieczenstwo')
+                ->name('security.')
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/start', 'start')->name('start');
+                    Route::post('/potwierdz', 'confirm')->middleware('throttle:10,1')->name('confirm');
+                    Route::delete('/', 'disable')->middleware('throttle:10,1')->name('disable');
+                    Route::get('/dziennik', 'audit')->name('audit');
+                });
+
+            // Opcje rezerwacji
+            Route::controller(OptionsController::class)
+                ->prefix('opcje')
+                ->name('options.')
+                ->group(function () {
+                    Route::get('/', 'edit')->name('edit');
+                    Route::put('/', 'update')->name('update');
+                });
+
+            // Ustawienia Messengera
+            Route::controller(MessengerSettingsController::class)
+                ->prefix('ustawienia/messenger')
+                ->name('settings.messenger.')
+                ->group(function () {
+                    Route::get('/', 'edit')->name('edit');
+                    Route::put('/', 'update')->name('update');
+                    Route::post('/test', 'test')->middleware('throttle:5,1')->name('test');
                 });
 
             // Miejsca odbioru i dostawy

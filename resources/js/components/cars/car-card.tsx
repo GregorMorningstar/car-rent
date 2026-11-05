@@ -1,12 +1,11 @@
-import { Link } from '@inertiajs/react';
-import type { VehicleType } from '@/components/admin/data/labels';
+import { Link, usePage } from '@inertiajs/react';
+import type { DrivingLicense, VehicleType } from '@/components/admin/data/labels';
 import { vehicleTypeLabels } from '@/components/admin/data/labels';
 import { buttonClass } from '@/components/ui/button';
 import type { IconSvg } from '@/components/ui/equipment-icon';
 import EquipmentList from '@/components/ui/equipment-list';
 import { kmLimitLabel } from '@/lib/pricing';
 import type { PriceTier } from '@/lib/pricing';
-import { reservation } from '@/routes';
 import carsRoutes from '@/routes/cars';
 import RentalPrice from './rental-price';
 
@@ -19,6 +18,7 @@ export type PublicCar = {
     brand: string;
     model: string;
     vehicle_type: VehicleType;
+    required_license: DrivingLicense;
     production_year: number;
     seats: number;
     doors: number;
@@ -32,8 +32,19 @@ export type PublicCar = {
 
 export const publicCarName = (car: PublicCar) => `${car.brand} ${car.model}`;
 
-export default function CarCard({ car, bookable = false, days }: { car: PublicCar; bookable?: boolean; days?: number }) {
+export default function CarCard({
+    car,
+    bookable = false,
+    days,
+    bookingQuery,
+}: {
+    car: PublicCar;
+    bookable?: boolean;
+    days?: number;
+    bookingQuery?: Record<string, string | undefined>;
+}) {
     const name = publicCarName(car);
+    const { auth } = usePage().props;
     const cover = car.images[0];
     const href = carsRoutes.show(car.id);
 
@@ -75,8 +86,8 @@ export default function CarCard({ car, bookable = false, days }: { car: PublicCa
 
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-3">
                     <RentalPrice fromRate={car.daily_rate} prices={car.prices} days={days} />
-                    {bookable && (
-                        <Link href={reservation({ query: { car: car.id } })} className={buttonClass('dark', 'sm')}>
+                    {bookable && auth.user?.role !== 'administrator' && (
+                        <Link href={carsRoutes.book(car.id, { query: bookingQuery })} className={buttonClass('dark', 'sm')}>
                             Zarezerwuj
                         </Link>
                     )}

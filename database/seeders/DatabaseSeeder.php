@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             ColorSeeder::class,
             LocationSeeder::class,
             CarSeeder::class,
+            ReservationSeeder::class,
+            ChatSeeder::class,
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\CarStatus;
 use App\Models\Car;
 use App\Repositories\Contracts\CarRepositoryInterface;
+use App\Support\LocalDate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +17,7 @@ class CarRepository implements CarRepositoryInterface
         'brand',
         'model',
         'vehicle_type',
+        'required_license',
         'production_year',
         'fuel_type',
         'transmission',
@@ -125,10 +127,11 @@ class CarRepository implements CarRepositoryInterface
     {
         return $this->publicCars()
             ->when(isset($filters['vehicle_type']), fn (Builder $query) => $query->where('vehicle_type', $filters['vehicle_type']))
+            ->when(isset($filters['license']), fn (Builder $query) => $query->where('required_license', $filters['license']))
             ->when(isset($filters['doors']), fn (Builder $query) => $query->where('doors', $filters['doors']))
             ->when(isset($filters['fuel']), fn (Builder $query) => $query->where('fuel_type', $filters['fuel']))
             ->when(isset($filters['transmission']), fn (Builder $query) => $query->where('transmission', $filters['transmission']))
-            ->when(isset($filters['from'], $filters['to']), fn (Builder $query) => $query->availableBetween($filters['from'], $filters['to']))
+            ->when(isset($filters['from'], $filters['to']), fn (Builder $query) => $query->availableBetween(LocalDate::startOfDay($filters['from']), LocalDate::endOfDay($filters['to'])))
             ->when(isset($filters['pickup']), fn (Builder $query) => $query->whereHas(
                 'locations',
                 fn (Builder $location) => $location->whereKey($filters['pickup']),

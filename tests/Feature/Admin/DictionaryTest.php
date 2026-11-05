@@ -160,6 +160,7 @@ test('renaming a color updates cars using it', function () {
         'doors' => 5,
         'seats' => 5,
         'mileage_km' => 15000,
+        'required_license' => 'b',
         'daily_rate' => '189.99',
         'deposit_amount' => '1000',
     ]);
@@ -458,6 +459,7 @@ test('car form gets swatches and car list gets color of a car', function () {
         'doors' => 5,
         'seats' => 5,
         'mileage_km' => 15000,
+        'required_license' => 'b',
         'daily_rate' => '189.99',
         'deposit_amount' => '1000',
     ]);

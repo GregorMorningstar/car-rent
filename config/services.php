@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'messenger' => [
+        // Token strony i odbiorca są w panelu administratora (tabela settings).
+        'graph_version' => env('MESSENGER_GRAPH_VERSION', 'v23.0'),
+        'ca_bundle' => env('MESSENGER_CA_BUNDLE', env('FONT_AWESOME_CA_BUNDLE')),
+    ],
+
     'font_awesome' => [
         // Token API z konta fontawesome.com. Bez niego dostępne są tylko darmowe ikony.
         'api_token' => env('FONT_AWESOME_API_TOKEN'),

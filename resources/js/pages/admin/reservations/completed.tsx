@@ -1,14 +1,13 @@
 import { Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { allReservations } from '@/components/admin/data/reservations';
 import ReservationsBrowser from '@/components/admin/reservations/reservations-browser';
+import type { AdminReservation } from '@/components/admin/reservations/types';
 import PageHeader from '@/components/ui/page-header';
 import { formatMoney } from '@/lib/format';
 import AdminLayout from '@/layouts/admin-layout';
 
-export default function AdminReservationsCompleted() {
-    const completed = allReservations().filter((reservation) => reservation.state === 'completed');
-    const revenue = completed.reduce((sum, reservation) => sum + reservation.total_price, 0);
+export default function AdminReservationsCompleted({ reservations, failed }: { reservations: AdminReservation[]; failed: boolean }) {
+    const revenue = reservations.reduce((sum, reservation) => sum + Number(reservation.total_price), 0);
 
     return (
         <>
@@ -22,7 +21,7 @@ export default function AdminReservationsCompleted() {
                     </div>
                 }
             />
-            <ReservationsBrowser reservations={completed} />
+            <ReservationsBrowser reservations={reservations} failed={failed} />
         </>
     );
 }

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\CarStatus;
+use App\Enums\DrivingLicense;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Enums\VehicleType;
@@ -41,6 +42,14 @@ class CarSeeder extends Seeder
         'van' => 300,
         'bus' => 500,
         'tow_truck' => 250,
+    ];
+
+    /** Wymagane prawo jazdy według rodzaju pojazdu. */
+    private const LICENSES = [
+        'passenger' => DrivingLicense::B,
+        'van' => DrivingLicense::B,
+        'bus' => DrivingLicense::D,
+        'tow_truck' => DrivingLicense::C,
     ];
 
     private const BODY_COLORS = [
@@ -201,6 +210,7 @@ class CarSeeder extends Seeder
                     ...$car,
                     'daily_rate' => $prices[2]['daily_rate'],
                     'km_limit_per_day' => self::KM_LIMITS[$car['vehicle_type']->value],
+                    'required_license' => self::LICENSES[$car['vehicle_type']->value],
                     'operational_status' => CarStatus::Active,
                 ],
             );
