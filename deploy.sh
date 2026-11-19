@@ -40,5 +40,7 @@ echo "==> Uprawnienia, baza i cache"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 run_as_app "$PHP" artisan migrate --force
 run_as_app "$PHP" artisan optimize
+# Czat na żywo: proces Reverb kończy się i jego usługa uruchamia go z nowym kodem.
+run_as_app "$PHP" artisan reverb:restart >/dev/null 2>&1 || true
 
 echo "==> Gotowe: $(git log -1 --format='%h %s')"
