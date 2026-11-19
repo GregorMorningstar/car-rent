@@ -6,11 +6,16 @@ import PageHeader from '@/components/ui/page-header';
 import UserLayout from '@/layouts/user-layout';
 import userRoutes from '@/routes/user';
 
-export default function UserMessages({ messages, failed }: { messages: ChatMessage[]; failed: boolean }) {
+export default function UserMessages({ messages, failed, forwarded }: { messages: ChatMessage[]; failed: boolean; forwarded: boolean }) {
     return (
         <>
             <Head title="Wiadomości" />
             <PageHeader title="Wiadomości" description="Rozmowa z obsługą wypożyczalni." />
+            {forwarded && (
+                <p className="mb-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
+                    Twoje wiadomości i imię trafiają do obsługi także przez Facebook Messenger, czyli do firmy Meta. Nie wysyłaj tu danych, których nie chcesz tam przekazać.
+                </p>
+            )}
             <ChatThread
                 messages={messages}
                 failed={failed}

@@ -59,8 +59,9 @@ class PasswordResetController extends Controller
         $status = Password::reset($validated, function (User $user, string $password) use ($users) {
             $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
 
-            // Ktoś mógł być zalogowany na tym koncie, więc wszystkie sesje się kończą.
+            // Ktoś mógł być zalogowany na tym koncie, więc sesje i zaufane urządzenia przestają działać.
             $users->forgetSessions($user);
+            $users->removeTrustedDevices($user->id);
 
             event(new PasswordReset($user));
         });

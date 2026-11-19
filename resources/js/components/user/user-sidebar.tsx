@@ -3,6 +3,7 @@ import { buttonClass } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { home, logout } from '@/routes';
 import user from '@/routes/user';
+import security from '@/routes/security';
 
 const icons = {
     messages:
@@ -40,6 +41,7 @@ const navigation = [
     { label: 'Wiadomości', route: user.messages.index, icon: icons.messages, unread: true },
     { label: 'Płatności', route: user.payments, icon: icons.payments },
     { label: 'Mój profil', route: user.profile, icon: icons.profile },
+    { label: 'Bezpieczeństwo', route: security.index, icon: icons.profile },
 ];
 
 export default function UserSidebar() {

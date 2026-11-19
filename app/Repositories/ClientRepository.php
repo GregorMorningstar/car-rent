@@ -32,7 +32,7 @@ class ClientRepository implements ClientRepositoryInterface
 
     public function count(): int
     {
-        return $this->model->newQuery()->where('role', UserRole::User)->count();
+        return $this->model->newQuery()->where('role', UserRole::User)->whereNull('anonymized_at')->count();
     }
 
     /**
@@ -43,7 +43,8 @@ class ClientRepository implements ClientRepositoryInterface
         return $this->model->newQuery()
             ->with('profile')
             ->withCount(['reservations' => fn (Builder $reservation) => $reservation->withTrashed()])
-            ->where('role', UserRole::User);
+            ->where('role', UserRole::User)
+            ->whereNull('anonymized_at');
     }
 
     /**

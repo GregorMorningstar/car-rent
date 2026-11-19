@@ -1,3 +1,4 @@
+import { privacy, terms } from '@/routes';
 import { Form, Head, Link } from '@inertiajs/react';
 import type { InputHTMLAttributes } from 'react';
 import { login } from '@/routes';
@@ -133,6 +134,24 @@ export default function Register() {
                                     />
                                 </div>
                             </fieldset>
+
+                            <div>
+                                <label className="flex items-start gap-2 text-sm">
+                                    <input type="checkbox" name="terms" required className="mt-0.5" />
+                                    <span>
+                                        Akceptuję{' '}
+                                        <a href={terms.url()} target="_blank" rel="noreferrer" className="font-medium text-gray-900 underline">
+                                            regulamin
+                                        </a>{' '}
+                                        i{' '}
+                                        <a href={privacy.url()} target="_blank" rel="noreferrer" className="font-medium text-gray-900 underline">
+                                            politykę prywatności
+                                        </a>
+                                        .
+                                    </span>
+                                </label>
+                                {errors.terms && <p className="mt-1 text-sm text-red-600">{errors.terms}</p>}
+                            </div>
 
                             <button
                                 type="submit"

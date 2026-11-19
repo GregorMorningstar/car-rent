@@ -44,7 +44,7 @@ export const reviews: Review[] = [
     },
 ];
 
-export const helpPhone = '+48 000 000 000';
+export const helpPhone = '123 123 123';
 
 // Opcje filtrów wyszukiwarki ("Więcej opcji")
 export const doorOptions = [

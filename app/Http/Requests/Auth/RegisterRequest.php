@@ -31,6 +31,7 @@ class RegisterRequest extends FormRequest
             'apartment_number' => ['nullable', 'string', 'max:10'],
             'postal_code' => ['required', 'string', 'regex:/^\d{2}-\d{3}$/'],
             'city' => ['required', 'string', 'max:100'],
+            'terms' => ['accepted'],
         ];
     }
 
@@ -42,6 +43,7 @@ class RegisterRequest extends FormRequest
         return [
             'phone.regex' => 'Podaj poprawny numer telefonu, np. +48 600 100 200.',
             'postal_code.regex' => 'Kod pocztowy musi mieć format 00-000.',
+            'terms.accepted' => 'Zaakceptuj regulamin i politykę prywatności.',
         ];
     }
 

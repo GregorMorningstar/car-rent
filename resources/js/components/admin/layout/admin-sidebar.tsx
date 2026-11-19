@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { home } from '@/routes';
 import admin from '@/routes/admin';
+import security from '@/routes/security';
 import type { RouteDefinition } from '@/wayfinder';
 
 type Item = {
@@ -54,8 +55,8 @@ const groups: Group[] = [
         items: [
             { label: 'Opcje rezerwacji', route: admin.options.edit, icon: icons.settings },
             { label: 'Ustawienia Messengera', route: admin.settings.messenger.edit, icon: icons.settings },
-            { label: 'Bezpieczeństwo', route: admin.security.index, icon: icons.settings },
-            { label: 'Dziennik działań', route: admin.security.audit, icon: icons.settings },
+            { label: 'Bezpieczeństwo', route: security.index, icon: icons.settings },
+            { label: 'Dziennik działań', route: admin.audit, icon: icons.settings },
         ],
     },
     {

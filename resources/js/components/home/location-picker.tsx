@@ -1,6 +1,8 @@
+import { usePage } from '@inertiajs/react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PublicLocation } from '@/components/cars/car-card';
 import { buttonClass } from '@/components/ui/button';
+import { NO_CHOICES, saveConsent } from '@/lib/cookie-consent';
 import { cn } from '@/lib/utils';
 
 const LocationMap = lazy(() => import('./location-map'));
@@ -146,7 +148,11 @@ export default function LocationPicker({
 
     // Stała referencja - nowa tablica przy każdym renderze tworzyłaby mapę od nowa.
     const mapped = useMemo(() => locations.filter(hasCoordinates), [locations]);
-    const showMap = mapped.length > 0;
+    // Mapa przekazuje adres IP dostawcy, więc bez zgody zostaje sama lista miejsc.
+    const { cookieConsent } = usePage().props;
+    const mapAllowed = cookieConsent?.functional === true;
+    const showMap = mapped.length > 0 && mapAllowed;
+    const enableMap = () => saveConsent({ ...(cookieConsent ?? NO_CHOICES), functional: true });
 
     const list = position
         ? [...locations].sort(
@@ -201,6 +207,15 @@ export default function LocationPicker({
                         )}
 
                         <div className="flex min-h-0 flex-col gap-3 p-4 md:overflow-y-auto">
+                            {mapped.length > 0 && !mapAllowed && (
+                                <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+                                    <p>Mapa wymaga cookies funkcjonalnych, bo przekazuje Twój adres IP dostawcy mapy.</p>
+                                    <button type="button" onClick={enableMap} className={buttonClass('outline', 'sm', 'mt-2 w-full border-gray-300')}>
+                                        Włącz mapę
+                                    </button>
+                                </div>
+                            )}
+
                             {geolocation === 'idle' && (
                                 <button
                                     type="button"

@@ -2,14 +2,17 @@
 
 namespace App\Repositories;
 
+use App\Models\TrustedDevice;
 use App\Models\User;
 use App\Repositories\Contracts\UserSecurityRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class UserSecurityRepository implements UserSecurityRepositoryInterface
 {
     public function __construct(
         private readonly User $model,
+        private readonly TrustedDevice $device,
     ) {}
 
     public function find(int $id): ?User
@@ -17,58 +20,14 @@ class UserSecurityRepository implements UserSecurityRepositoryInterface
         return $this->model->newQuery()->find($id);
     }
 
-    public function startTwoFactor(User $user, string $secret): void
+    public function enableTwoFactor(User $user): void
     {
-        $user->forceFill([
-            'two_factor_secret' => $secret,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
-            'two_factor_last_step' => null,
-        ])->save();
-    }
-
-    public function confirmTwoFactor(User $user, array $recoveryHashes, int $step): void
-    {
-        $user->forceFill([
-            'two_factor_recovery_codes' => $recoveryHashes,
-            'two_factor_confirmed_at' => now(),
-            'two_factor_last_step' => $step,
-        ])->save();
+        $user->forceFill(['two_factor_enabled_at' => now()])->save();
     }
 
     public function disableTwoFactor(User $user): void
     {
-        $user->forceFill([
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
-            'two_factor_last_step' => null,
-        ])->save();
-    }
-
-    public function useStep(User $user, int $step): bool
-    {
-        return $this->model->newQuery()
-            ->whereKey($user->id)
-            ->where(fn ($query) => $query->whereNull('two_factor_last_step')->orWhere('two_factor_last_step', '<', $step))
-            ->update(['two_factor_last_step' => $step]) === 1;
-    }
-
-    public function useRecoveryCode(User $user, string $hash): bool
-    {
-        return DB::transaction(function () use ($user, $hash) {
-            $fresh = $this->model->newQuery()->whereKey($user->id)->lockForUpdate()->first();
-            $codes = $fresh?->two_factor_recovery_codes ?? [];
-            $remaining = array_values(array_filter($codes, fn (string $code) => ! hash_equals($code, $hash)));
-
-            if ($fresh === null || count($remaining) === count($codes)) {
-                return false;
-            }
-
-            $fresh->forceFill(['two_factor_recovery_codes' => $remaining])->save();
-
-            return true;
-        });
+        $user->forceFill(['two_factor_enabled_at' => null])->save();
     }
 
     public function forgetSessions(User $user): void
@@ -76,5 +35,55 @@ class UserSecurityRepository implements UserSecurityRepositoryInterface
         if (config('session.driver') === 'database') {
             DB::table(config('session.table'))->where('user_id', $user->id)->delete();
         }
+    }
+
+    public function trustedDevices(int $userId): array
+    {
+        return $this->device->newQuery()
+            ->where('user_id', $userId)
+            ->where('expires_at', '>', now())
+            ->latest('last_used_at')
+            ->get()
+            ->all();
+    }
+
+    public function addTrustedDevice(int $userId, string $tokenHash, string $name, CarbonInterface $expiresAt): void
+    {
+        $this->device->create([
+            'user_id' => $userId,
+            'token_hash' => $tokenHash,
+            'name' => $name,
+            'last_used_at' => now(),
+            'expires_at' => $expiresAt,
+        ]);
+    }
+
+    public function findTrustedDevice(int $userId, string $tokenHash): ?TrustedDevice
+    {
+        return $this->device->newQuery()
+            ->where('user_id', $userId)
+            ->where('token_hash', $tokenHash)
+            ->where('expires_at', '>', now())
+            ->first();
+    }
+
+    public function touchTrustedDevice(TrustedDevice $device): void
+    {
+        $device->update(['last_used_at' => now()]);
+    }
+
+    public function removeTrustedDevice(int $userId, int $deviceId): bool
+    {
+        return $this->device->newQuery()->where('user_id', $userId)->whereKey($deviceId)->delete() === 1;
+    }
+
+    public function removeTrustedDeviceByHash(string $tokenHash): void
+    {
+        $this->device->newQuery()->where('token_hash', $tokenHash)->delete();
+    }
+
+    public function removeTrustedDevices(int $userId): void
+    {
+        $this->device->newQuery()->where('user_id', $userId)->delete();
     }
 }

@@ -1,12 +1,16 @@
 import { Link, usePage } from '@inertiajs/react';
 import { helpPhone } from '@/components/home/data';
-import { about, cars, contact, home } from '@/routes';
+import { openCookieSettings } from '@/lib/cookie-consent';
+import { about, cars, contact, cookies, home, privacy, terms } from '@/routes';
 
 const navigation = [
     { label: 'Strona główna', href: home() },
     { label: 'Samochody', href: cars() },
     { label: 'Kontakt', href: contact() },
     { label: 'O nas', href: about() },
+    { label: 'Regulamin', href: terms() },
+    { label: 'Polityka prywatności', href: privacy() },
+    { label: 'Cookies', href: cookies() },
 ];
 
 export default function SiteFooter() {
@@ -44,6 +48,15 @@ export default function SiteFooter() {
                                 </Link>
                             </li>
                         ))}
+                        <li>
+                            <button
+                                type="button"
+                                onClick={openCookieSettings}
+                                className="flex min-h-10 items-center text-left transition-colors hover:text-white"
+                            >
+                                Ustawienia cookies
+                            </button>
+                        </li>
                     </ul>
                 </nav>
 

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\ChatService;
 use App\Services\ReservationService;
+use App\Support\CookieConsent;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -46,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'flash' => fn () => $request->session()->get('status'),
+            'cookieConsent' => fn () => CookieConsent::fromRequest($request),
             'notifications' => fn () => $this->notifications($request->user()),
         ];
     }

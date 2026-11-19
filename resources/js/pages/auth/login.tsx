@@ -1,10 +1,11 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { openCookieSettings } from '@/lib/cookie-consent';
 import { register } from '@/routes';
 import login from '@/routes/login';
 import password from '@/routes/password';
 
 export default function Login() {
-    const { flash } = usePage().props;
+    const { flash, cookieConsent } = usePage().props;
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -71,10 +72,19 @@ export default function Login() {
                                 )}
                             </div>
 
-                            <label className="flex items-center gap-2 text-sm">
-                                <input type="checkbox" name="remember" />
-                                Zapamiętaj mnie
-                            </label>
+                            {cookieConsent?.functional ? (
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" name="remember" />
+                                    Zapamiętaj mnie
+                                </label>
+                            ) : (
+                                <p className="text-sm text-gray-600">
+                                    Zapamiętanie logowania wymaga cookies funkcjonalnych.{' '}
+                                    <button type="button" onClick={openCookieSettings} className="font-medium text-gray-900 underline">
+                                        Ustawienia cookies
+                                    </button>
+                                </p>
+                            )}
 
                             <button
                                 type="submit"

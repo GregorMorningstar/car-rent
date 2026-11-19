@@ -37,6 +37,7 @@ class ChatRepository implements ChatRepositoryInterface
     {
         return $this->user->newQuery()
             ->where('role', UserRole::User)
+            ->whereNull('anonymized_at')
             ->orderBy('name')
             ->get(['id', 'name', 'email'])
             ->map(fn (User $client) => ['id' => $client->id, 'name' => $client->name, 'email' => $client->email])
@@ -45,7 +46,7 @@ class ChatRepository implements ChatRepositoryInterface
 
     public function isClient(int $userId): bool
     {
-        return $this->user->newQuery()->whereKey($userId)->where('role', UserRole::User)->exists();
+        return $this->user->newQuery()->whereKey($userId)->where('role', UserRole::User)->whereNull('anonymized_at')->exists();
     }
 
     public function allWithUnread(): array

@@ -23,16 +23,15 @@ use Illuminate\Notifications\Notifiable;
  * @property string $password
  * @property string|null $remember_token
  * @property CarbonImmutable|null $last_login_at
- * @property string|null $two_factor_secret
- * @property array<int, string>|null $two_factor_recovery_codes
- * @property CarbonImmutable|null $two_factor_confirmed_at
- * @property int|null $two_factor_last_step
+ * @property CarbonImmutable|null $terms_accepted_at
+ * @property CarbonImmutable|null $anonymized_at
+ * @property CarbonImmutable|null $two_factor_enabled_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read UserProfile|null $profile
  */
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_step'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -50,16 +49,23 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
-            'two_factor_secret' => 'encrypted',
-            'two_factor_recovery_codes' => 'encrypted:array',
-            'two_factor_confirmed_at' => 'datetime',
-            'two_factor_last_step' => 'integer',
+            'terms_accepted_at' => 'datetime',
+            'anonymized_at' => 'datetime',
+            'two_factor_enabled_at' => 'datetime',
         ];
     }
 
     public function hasTwoFactor(): bool
     {
-        return $this->two_factor_confirmed_at !== null;
+        return $this->two_factor_enabled_at !== null;
+    }
+
+    /**
+     * @return HasMany<TrustedDevice, $this>
+     */
+    public function trustedDevices(): HasMany
+    {
+        return $this->hasMany(TrustedDevice::class);
     }
 
     /**

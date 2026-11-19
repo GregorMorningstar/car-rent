@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\TrustedDevice;
 use App\Services\ReservationService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -16,5 +17,8 @@ Artisan::command('reservations:expire', function (ReservationService $reservatio
 
 Schedule::command('reservations:expire')->everyMinute()->withoutOverlapping();
 
-// Dziennik działań trzyma wpisy przez rok.
-Schedule::command('model:prune', ['--model' => [AuditLog::class]])->daily();
+// Dziennik działań trzyma wpisy przez rok, a wygasłe zaufane urządzenia znikają.
+Schedule::command('model:prune', ['--model' => [AuditLog::class, TrustedDevice::class]])->daily();
+
+// Dane osobowe po terminach z config/retention.php.
+Schedule::command('data:prune')->daily()->withoutOverlapping();

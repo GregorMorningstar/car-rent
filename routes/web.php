@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CarController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -9,14 +11,15 @@ use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\MessengerSettingsController;
 use App\Http\Controllers\Admin\OptionsController;
 use App\Http\Controllers\Admin\ReservationController;
-use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CookieConsentController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserReservationController;
 use App\Http\Middleware\AuditAdminActions;
@@ -29,6 +32,7 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/login/kod', [TwoFactorChallengeController::class, 'create'])->name('login.code');
     Route::post('/login/kod', [TwoFactorChallengeController::class, 'store'])->middleware('throttle:10,1')->name('login.code.verify');
+    Route::post('/login/kod/ponownie', [TwoFactorChallengeController::class, 'resend'])->middleware('throttle:3,1')->name('login.code.resend');
 
     Route::get('/haslo/przypomnij', [PasswordResetController::class, 'create'])->name('password.request');
     Route::post('/haslo/przypomnij', [PasswordResetController::class, 'store'])->middleware('throttle:5,1')->name('password.email');
@@ -47,9 +51,14 @@ Route::get('/samochody/{id}', [PageController::class, 'car'])->whereNumber('id')
 Route::get('/kontakt', [PageController::class, 'contact'])->name('contact');
 Route::get('/o-nas', [PageController::class, 'about'])->name('about');
 Route::get('/rezerwacja', [PageController::class, 'reservation'])->name('reservation');
+Route::get('/cookies', [PageController::class, 'cookies'])->name('cookies');
+Route::post('/cookies/zgoda', [CookieConsentController::class, 'store'])->middleware('throttle:30,1')->name('cookies.consent');
+Route::get('/regulamin', [PageController::class, 'terms'])->name('terms');
+Route::get('/polityka-prywatnosci', [PageController::class, 'privacy'])->name('privacy');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+    Route::delete('/konto', [AccountController::class, 'destroy'])->middleware(['role:user', 'throttle:5,1'])->name('account.destroy');
 
     // Rezerwacja samochodu przez klienta
     Route::middleware(['verified', 'role:user'])
@@ -98,6 +107,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1')
         ->name('verification.send');
+
+    // Bezpieczeństwo własnego konta: logowanie dwuetapowe i zaufane urządzenia
+    Route::middleware(['verified', AuditAdminActions::class])
+        ->controller(SecurityController::class)
+        ->prefix('konto/bezpieczenstwo')
+        ->name('security.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/kod', 'sendCode')->middleware('throttle:5,1')->name('code');
+            Route::post('/wlacz', 'enable')->middleware('throttle:10,1')->name('enable');
+            Route::delete('/', 'disable')->middleware('throttle:10,1')->name('disable');
+            Route::delete('/urzadzenia/{id}', 'destroyDevice')->whereNumber('id')->name('devices.destroy');
+            Route::delete('/urzadzenia', 'destroyDevices')->name('devices.clear');
+        });
 
     // Panel administratora
     Route::middleware(['verified', 'role:administrator', AuditAdminActions::class])
@@ -158,17 +181,8 @@ Route::middleware('auth')->group(function () {
                     Route::post('/{conversation}', 'store')->whereNumber('conversation')->middleware('throttle:60,1')->name('store');
                 });
 
-            // Bezpieczeństwo konta i dziennik działań
-            Route::controller(SecurityController::class)
-                ->prefix('bezpieczenstwo')
-                ->name('security.')
-                ->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('/start', 'start')->name('start');
-                    Route::post('/potwierdz', 'confirm')->middleware('throttle:10,1')->name('confirm');
-                    Route::delete('/', 'disable')->middleware('throttle:10,1')->name('disable');
-                    Route::get('/dziennik', 'audit')->name('audit');
-                });
+            // Dziennik działań
+            Route::get('/dziennik', [AuditLogController::class, 'index'])->name('audit');
 
             // Opcje rezerwacji
             Route::controller(OptionsController::class)

@@ -1,3 +1,4 @@
+import type { CookieChoices } from '@/lib/cookie-consent';
 import type { Auth } from '@/types/auth';
 import type { Notifications } from '@/types/notifications';
 
@@ -13,6 +14,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             flash: string | null;
+            cookieConsent: CookieChoices | null;
             notifications: Notifications | null;
             sidebarOpen: boolean;
             [key: string]: unknown;

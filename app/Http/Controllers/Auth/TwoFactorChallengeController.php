@@ -3,77 +3,89 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Repositories\Contracts\UserSecurityRepositoryInterface;
 use App\Services\AuditLogService;
 use App\Services\TwoFactorService;
+use App\Support\CookieConsent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Drugi krok logowania. Sesja pamięta tylko konto po poprawnym haśle, a zalogowanie następuje po kodzie.
+ * Drugi krok logowania. Sesja pamięta tylko konto po poprawnym haśle, a zalogowanie następuje po kodzie z e-maila.
  */
 class TwoFactorChallengeController extends Controller
 {
     public const SESSION_KEY = 'two_factor.login';
 
-    public const MINUTES = 5;
-
-    private const MAX_ATTEMPTS = 5;
+    public function __construct(
+        private readonly TwoFactorService $twoFactor,
+        private readonly UserSecurityRepositoryInterface $users,
+    ) {}
 
     public function create(Request $request): Response|RedirectResponse
     {
-        return $this->pending($request) === null
+        $user = $this->pendingUser($request);
+
+        return $user === null
             ? to_route('login')
-            : Inertia::render('auth/two-factor');
+            : Inertia::render('auth/two-factor', [
+                'email' => $user->email,
+                'minutes' => TwoFactorService::CODE_MINUTES,
+                'trustDays' => TwoFactorService::TRUST_DAYS,
+            ]);
     }
 
-    public function store(
-        Request $request,
-        TwoFactorService $twoFactor,
-        UserSecurityRepositoryInterface $users,
-        AuditLogService $auditLog,
-    ): RedirectResponse {
-        $pending = $this->pending($request);
+    public function store(Request $request, AuditLogService $auditLog): RedirectResponse
+    {
+        $user = $this->pendingUser($request);
 
-        if ($pending === null) {
+        if ($user === null) {
             return to_route('login');
         }
 
-        $validated = $request->validate(['code' => ['required', 'string', 'max:20']], [], ['code' => 'kod']);
-        $limiterKey = 'two-factor:'.$pending['id'];
+        $validated = $request->validate(
+            ['code' => ['required', 'digits:6'], 'trust' => ['nullable', 'boolean']],
+            [],
+            ['code' => 'kod'],
+        );
 
-        if (RateLimiter::tooManyAttempts($limiterKey, self::MAX_ATTEMPTS)) {
-            throw ValidationException::withMessages(['code' => 'Zbyt wiele prób. Spróbuj ponownie za kilka minut.']);
-        }
+        $this->twoFactor->verifyCode($user, $validated['code']);
 
-        $user = $users->find($pending['id']);
+        $remember = (bool) $request->session()->get(self::SESSION_KEY.'.remember');
 
-        if ($user === null || ! $twoFactor->verify($user, $validated['code'])) {
-            RateLimiter::hit($limiterKey, self::MINUTES * 60);
-
-            throw ValidationException::withMessages(['code' => 'Nieprawidłowy kod.']);
-        }
-
-        RateLimiter::clear($limiterKey);
         $request->session()->forget(self::SESSION_KEY);
 
-        Auth::guard('web')->login($user, $pending['remember']);
+        Auth::guard('web')->login($user, $remember);
 
         $request->session()->regenerate();
+
+        if ($request->boolean('trust') && CookieConsent::allows($request, 'functional')) {
+            $this->twoFactor->trustDevice($user, $request);
+        }
+
         $auditLog->recordLogin($user, $request->ip());
 
         return redirect()->intended(route($user->role->homeRoute(), absolute: false));
     }
 
-    /**
-     * @return array{id: int, remember: bool, expires_at: int}|null
-     */
-    private function pending(Request $request): ?array
+    public function resend(Request $request): RedirectResponse
+    {
+        $user = $this->pendingUser($request);
+
+        if ($user === null) {
+            return to_route('login');
+        }
+
+        $this->twoFactor->sendCode($user);
+
+        return back()->with('status', 'Jeśli poprzedni kod nie dotarł, nowy jest już w drodze. Kolejny możesz wysłać za minutę.');
+    }
+
+    private function pendingUser(Request $request): ?User
     {
         $pending = $request->session()->get(self::SESSION_KEY);
 
@@ -81,6 +93,6 @@ class TwoFactorChallengeController extends Controller
             return null;
         }
 
-        return $pending;
+        return $this->users->find($pending['id']);
     }
 }

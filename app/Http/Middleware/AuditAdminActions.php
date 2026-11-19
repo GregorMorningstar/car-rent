@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserRole;
 use App\Services\AuditLogService;
 use Closure;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class AuditAdminActions
     {
         $response = $next($request);
 
-        if (! $request->isMethodSafe()) {
+        if (! $request->isMethodSafe() && $request->user()?->role === UserRole::Administrator) {
             $failedValidation = in_array('errors', $request->session()->get('_flash.new', []), true);
             $subject = collect($request->route()?->parameters() ?? [])->map(fn (mixed $value, string $key) => "{$key}={$value}")->implode(' ');
 

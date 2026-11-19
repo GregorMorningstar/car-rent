@@ -23,6 +23,7 @@ class RegisterController extends Controller
     {
         $user = DB::transaction(function () use ($request): User {
             $user = User::create($request->only('name', 'email', 'password'));
+            $user->forceFill(['terms_accepted_at' => now()])->save();
 
             $user->profile()->create($request->only(
                 'phone',

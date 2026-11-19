@@ -33,6 +33,7 @@ class AuditLogService
         }
     }
 
+    /** Tylko administracja: logowania klientów nie są potrzebne w dzienniku panelu. */
     public function recordLogin(User $user, ?string $ip): void
     {
         if ($user->role === UserRole::Administrator) {

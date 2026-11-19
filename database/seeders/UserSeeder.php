@@ -58,6 +58,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('qwer1234'),
                 'role' => $account['role'],
                 'email_verified_at' => now(),
+                'terms_accepted_at' => now(),
             ])->save();
 
             $user->profile()->updateOrCreate([], $account['profile']);

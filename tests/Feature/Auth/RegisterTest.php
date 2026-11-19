@@ -18,6 +18,7 @@ function registrationData(array $overrides = []): array
         'apartment_number' => '5',
         'postal_code' => '00-001',
         'city' => 'Warszawa',
+        'terms' => '1',
         ...$overrides,
     ];
 }

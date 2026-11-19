@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ChatService;
+use App\Services\MessengerService;
 use App\Services\UserPanelService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,9 +35,12 @@ class UserController extends Controller
         );
     }
 
-    public function messages(Request $request): Response
+    public function messages(Request $request, MessengerService $messenger): Response
     {
-        return Inertia::render('user/messages', $this->chatService->clientThread($request->user()));
+        return Inertia::render('user/messages', [
+            ...$this->chatService->clientThread($request->user()),
+            'forwarded' => $messenger->settings()['enabled'],
+        ]);
     }
 
     /** Adresata nie ma w żądaniu - wiadomość zawsze trafia do administracji. */

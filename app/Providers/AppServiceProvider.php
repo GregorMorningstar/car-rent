@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Repositories\AccountRepository;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\CarRepository;
 use App\Repositories\ChatRepository;
 use App\Repositories\ClientRepository;
 use App\Repositories\ColorRepository;
+use App\Repositories\Contracts\AccountRepositoryInterface;
 use App\Repositories\Contracts\AuditLogRepositoryInterface;
 use App\Repositories\Contracts\CarRepositoryInterface;
 use App\Repositories\Contracts\ChatRepositoryInterface;
@@ -55,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
         $this->app->bind(UserSecurityRepositoryInterface::class, UserSecurityRepository::class);
         $this->app->bind(AuditLogRepositoryInterface::class, AuditLogRepository::class);
+        $this->app->bind(AccountRepositoryInterface::class, AccountRepository::class);
         $this->app->bind(UserPanelRepositoryInterface::class, UserPanelRepository::class);
     }
 

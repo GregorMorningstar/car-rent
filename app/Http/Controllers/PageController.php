@@ -78,6 +78,21 @@ class PageController extends Controller
         ]);
     }
 
+    public function cookies(): Response
+    {
+        return $this->placeholder('Cookies');
+    }
+
+    public function terms(): Response
+    {
+        return $this->placeholder('Regulamin');
+    }
+
+    public function privacy(): Response
+    {
+        return $this->placeholder('Polityka prywatności');
+    }
+
     private function placeholder(string $title): Response
     {
         return Inertia::render('placeholder', ['title' => $title]);

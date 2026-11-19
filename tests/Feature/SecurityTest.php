@@ -201,6 +201,7 @@ test('role cannot be set through a crafted registration', function () {
         'building_number' => '1',
         'postal_code' => '38-400',
         'city' => 'Krosno',
+        'terms' => '1',
         'role' => UserRole::Administrator->value,
         'is_admin' => 1,
         'email_verified_at' => '2026-01-01',
